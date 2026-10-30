@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RiCar Pintura Automotiva · Orçamento</title>
+<meta name="description" content="Pintura automotiva com mais de 30 anos de experiência em Embu das Artes, Taboão da Serra e região. Peça seu orçamento pelo WhatsApp.">
+<meta property="og:title" content="RiCar Pintura Automotiva">
+<meta property="og:description" content="Peça seu orçamento em 2 minutos pelo WhatsApp.">
+<meta property="og:type" content="website">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23b3261e'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='bold' font-size='16' fill='white' text-anchor='middle'%3ERC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="proto" id="proto">Protótipo · número do WhatsApp ainda não configurado</span>
+    <div class="brand"><b>RiCar</b><span>Pintura automotiva</span></div>
+    <h1>Peça seu orçamento <em>em 2 minutos</em></h1>
+    <div class="facts">
+      <span>Mais de 30 anos de experiência</span>
+      <span id="f-regiao">Embu das Artes, Taboão da Serra e região</span>
+      <span>Um carro por vez, com atenção total</span>
+    </div>
+  </header>
+
+  <ol class="how" aria-label="Como funciona">
+    <li><b>Preencha o pedido</b><span class="muted">Serviço, carro e quando você prefere.</span></li>
+    <li><b>Envie pelo WhatsApp</b><span class="muted">O pedido chega pronto para a nossa equipe.</span></li>
+    <li><b>Você manda 3 fotos</b><span class="muted">Na mesma conversa do WhatsApp, logo depois do pedido.</span></li>
+    <li><b>Receba o valor final</b><span class="muted">Depois de avaliar as fotos, confirmamos preço, prazo e data.</span></li>
+  </ol>
+
+  <div class="main">
+    <form id="form" novalidate>
+      <fieldset id="fs-svc" aria-describedby="e-svc" tabindex="-1">
+        <legend><span class="step">1</span>Serviço <small>pode escolher mais de um</small></legend>
+        <div class="svcs" id="svcs"></div>
+        <p class="err" id="e-svc" hidden>Escolha pelo menos um serviço.</p>
+        <label class="chip" style="align-self:flex-start"><input type="checkbox" id="amassado"><span>Tem amassado (precisa de funilaria)</span></label>
+        <p class="callout" id="funilaria" hidden>Amassados passam primeiro pela funilaria, feita pelo nosso funileiro parceiro. O valor dessa parte vem junto no orçamento.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="step">2</span>Seu carro</legend>
+        <div class="two">
+          <div class="field"><label for="modelo">Modelo</label><input type="text" id="modelo" placeholder="Ex.: Onix, HB20, Corolla" autocomplete="off" maxlength="40" aria-describedby="e-modelo"><p class="err" id="e-modelo" hidden>Diga o modelo do carro.</p></div>
+          <div class="field"><label for="ano">Ano <span class="opt">(opcional)</span></label><input type="text" id="ano" inputmode="numeric" maxlength="4" placeholder="Ex.: 2019" aria-describedby="e-ano"><p class="err" id="e-ano" hidden></p></div>
+        </div>
+        <div class="field"><span class="lbl" id="l-porte">Tipo de carro</span><div class="chips" id="porte" role="radiogroup" aria-labelledby="l-porte"></div></div>
+        <div class="two">
+          <div class="field"><label for="cor">Cor <span class="opt">(opcional)</span></label><input type="text" id="cor" placeholder="Ex.: prata, branco" autocomplete="off" maxlength="30"></div>
+          <div class="field"><label for="tinta">Tipo de pintura</label>
+            <select id="tinta"><option value="nao-sei">Não sei</option><option value="solida">Sólida (cor lisa)</option><option value="metalica">Metálica (com brilho de pó)</option><option value="perolizada">Perolizada (muda de tom)</option></select></div>
+        </div>
+        <div class="field"><label for="obs">Conte o que aconteceu <span class="opt">(opcional)</span></label><textarea id="obs" maxlength="300" placeholder="Ex.: risco de garagem no para-choque traseiro, lado direito"></textarea></div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="step">3</span>Quando você prefere</legend>
+        <div class="chips" id="datas" role="radiogroup" aria-label="Fim de semana preferido"></div>
+        <p class="hint">Trabalhamos em um carro por vez, então confirmamos a data pelo WhatsApp.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="step">4</span>Seus dados</legend>
+        <div class="two">
+          <div class="field"><label for="nome">Nome</label><input type="text" id="nome" autocomplete="name" maxlength="60" aria-describedby="e-nome"><p class="err" id="e-nome" hidden>Diga seu nome.</p></div>
+          <div class="field"><label for="bairro">Cidade e bairro</label><input type="text" id="bairro" maxlength="60" placeholder="Ex.: Embu das Artes, Centro" aria-describedby="h-bairro e-bairro"><span class="hint" id="h-bairro">Para combinarmos onde deixar o carro.</span><p class="err" id="e-bairro" hidden>Diga sua cidade e bairro.</p></div>
+        </div>
+        <div class="field"><label for="origem">Como conheceu a gente? <span class="opt">(opcional)</span></label>
+          <select id="origem"><option value="">Prefiro não dizer</option><option>Indicação de amigo</option><option>Instagram</option><option>Google</option><option>Já sou cliente</option><option>Outro</option></select></div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="step">5</span>Fotos do seu carro</legend>
+        <p>Sem fotos não conseguimos fazer o orçamento. <strong>Logo depois de enviar o pedido, mande estas 3 fotos na mesma conversa do WhatsApp:</strong></p>
+        <div class="shots">
+          <div class="shot"><span class="n">1</span>
+            <svg viewBox="0 0 120 60" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M10 42 L14 30 Q18 22 30 21 L44 12 Q50 9 60 9 L78 9 Q86 9 92 15 L100 22 Q112 24 112 34 L112 42 Z"/><circle cx="32" cy="44" r="8" fill="var(--bg)"/><circle cx="90" cy="44" r="8" fill="var(--bg)"/></g></svg>
+            <b>Carro inteiro</b><small>De longe, mostrando o lado da avaria.</small></div>
+          <div class="shot"><span class="n">2</span>
+            <svg viewBox="0 0 120 60" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3"><rect x="14" y="8" width="92" height="44" rx="3"/><path d="M34 34 L52 24 L66 32 L84 20" stroke="var(--cor)" stroke-width="4" stroke-linecap="round"/></g></svg>
+            <b>Avaria de perto</b><small>Bem de perto, com boa luz.</small></div>
+          <div class="shot"><span class="n">3</span>
+            <svg viewBox="0 0 120 60" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M10 50 L10 22 Q10 14 20 14 L100 14 Q110 14 110 22 L110 50 Z"/><circle cx="60" cy="32" r="12" stroke="var(--cor)"/></g></svg>
+            <b>Avaria de longe</b><small>A peça inteira, para ver o tamanho do estrago.</small></div>
+        </div>
+        <label class="confirm" for="fotos-ok" id="l-fotos"><input type="checkbox" id="fotos-ok" aria-describedby="e-fotos"><span>Entendi: depois de enviar o pedido, eu mando as 3 fotos no WhatsApp.</span></label>
+        <p class="err" id="e-fotos" hidden>Marque aqui para confirmar que vai mandar as fotos.</p>
+      </fieldset>
+    </form>
+
+    <aside aria-label="Resumo do pedido">
+      <div class="receipt" id="receipt" aria-live="polite"></div>
+      <div class="actions">
+        <div class="summary" id="summary" role="alert" hidden></div>
+        <a class="btn wpp" id="send" href="#" target="_blank" rel="noopener">Enviar pedido pelo WhatsApp</a>
+        <button class="btn ghost" id="copy" type="button" hidden>Copiar pedido (teste)</button>
+        <p class="status" id="status" role="status"></p>
+      </div>
+      <div class="next" id="next" hidden>
+        <b>Falta pouco: mande as fotos</b>
+        <p>Na mesma conversa em que você enviou o pedido:</p>
+        <ol><li>Carro inteiro</li><li>Avaria de perto</li><li>Avaria de longe</li></ol>
+        <p class="hint">Com as fotos, respondemos com o valor, o prazo e a data.</p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="port" aria-label="Trabalhos">
+    <h2>Antes e depois</h2>
+    <p class="muted">Fotos dos nossos trabalhos em breve.</p>
+    <div class="slots"><div class="slot"><div>Antes</div><div>Depois</div></div><div class="slot"><div>Antes</div><div>Depois</div></div><div class="slot"><div>Antes</div><div>Depois</div></div></div>
+  </section>
+
+  <footer>RiCar Pintura Automotiva · Embu das Artes, Taboão da Serra e região</footer>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
