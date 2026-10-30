@@ -128,3 +128,5 @@ fieldset.invalido{box-shadow:inset 3px 0 0 var(--cor)}
 .summary ul{margin:0;padding-left:18px}
 .summary button{font:inherit;background:none;border:0;padding:2px 0;color:var(--fg);text-decoration:underline;cursor:pointer}
 .qty input{width:64px;padding:6px 8px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.btn[aria-busy=true]{opacity:.7;cursor:progress}

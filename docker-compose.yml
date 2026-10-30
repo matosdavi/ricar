@@ -1,0 +1,14 @@
+# Banco local para desenvolvimento: docker compose up -d
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ricar
+      POSTGRES_PASSWORD: ricar
+      POSTGRES_DB: ricar
+    ports:
+      - "5432:5432"
+    volumes:
+      - dados:/var/lib/postgresql/data
+volumes:
+  dados:

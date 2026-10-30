@@ -50,7 +50,7 @@
 
   function dados(){
     var itens=[];
-    CONFIG.servicos.forEach(function(s){ if($('s-'+s.id).checked) itens.push({nome:s.nome,q:qtd(s)}); });
+    CONFIG.servicos.forEach(function(s){ if($('s-'+s.id).checked) itens.push({id:s.id,nome:s.nome,q:qtd(s)}); });
     var porte=document.querySelector('input[name=porte]:checked'), data=document.querySelector('input[name=data]:checked');
     var tinta=$('tinta');
     return {itens:itens, porte:porte?porte.value:'', tinta:tinta.value==='nao-sei'?'':tinta.selectedOptions[0].textContent.replace(/ \(.*\)/,''),
@@ -96,8 +96,7 @@
     if(!d.itens.length && !d.modelo && !d.nome){ r.classList.add('vazio'); r.textContent='Seu pedido aparece aqui enquanto você preenche.'; }
     else { r.classList.remove('vazio'); r.textContent=t.replace(/\*/g,''); }
     var send=$('send');
-    if(CONFIG.whatsapp){ send.href='https://wa.me/'+CONFIG.whatsapp+'?text='+encodeURIComponent(t); send.removeAttribute('aria-disabled'); }
-    else { send.href='#'; send.setAttribute('aria-disabled','true'); }
+    if(CONFIG.whatsapp || CONFIG.api){ send.removeAttribute('aria-disabled'); } else { send.setAttribute('aria-disabled','true'); }
     if(tentou) validar(d,false);
     return {d:d,t:t};
   }
@@ -139,13 +138,65 @@
   $('form').addEventListener('submit',function(e){e.preventDefault()});
   $('ano').addEventListener('input',function(){var v=this.value.replace(/\D/g,''); if(v!==this.value) this.value=v;});
 
+  /* Com CONFIG.api, o pedido é gravado no servidor antes de abrir o WhatsApp e ganha
+     número sequencial (RC-00001). Se o servidor falhar, o pedido segue pelo WhatsApp
+     com o número local, para o cliente nunca ficar travado. */
+  var registrado=false, enviando=false;
+  function payload(d){
+    return {itens:d.itens.map(function(i){return {servico:i.id,quantidade:i.q}}), tem_amassado:d.amassado,
+      modelo:d.modelo, ano:d.ano, porte:d.porte, cor:d.cor, tipo_pintura:d.tinta, observacao:d.obs,
+      preferencia:d.data, nome:d.nome, cidade_bairro:d.bairro, origem:d.origem, site:$('site').value};
+  }
+  function registrar(d){
+    var ctrl=new AbortController(), timer=setTimeout(function(){ctrl.abort()},6000);
+    return fetch(CONFIG.api.replace(/\/$/,'')+'/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload(d)),signal:ctrl.signal})
+      .then(function(res){ return res.json().catch(function(){return {}}).then(function(j){ return {status:res.status,json:j}; }); })
+      .finally(function(){clearTimeout(timer)});
+  }
+  function abrirWhats(janela){
+    var url='https://wa.me/'+CONFIG.whatsapp+'?text='+encodeURIComponent(texto(dados()));
+    if(janela && !janela.closed){ janela.location.href=url; } else { location.href=url; }
+  }
+  function ocupado(sim){
+    enviando=sim; var b=$('send');
+    b.setAttribute('aria-busy',sim); b.textContent=sim?'Registrando pedido…':'Enviar pedido pelo WhatsApp';
+  }
+
   $('send').addEventListener('click',function(e){
+    e.preventDefault();
+    if(enviando) return;
     tentou=true;
     var r=render();
-    if(!validar(r.d,true)){ e.preventDefault(); $('status').textContent=''; return; }
-    $('next').hidden=false;
-    if(!CONFIG.whatsapp){ e.preventDefault(); $('status').textContent='Protótipo: o número do WhatsApp ainda não foi configurado. Use "Copiar pedido" para ver o texto.'; return; }
-    $('status').textContent='Abrindo o WhatsApp…';
+    if(!validar(r.d,true)){ $('status').textContent=''; return; }
+
+    if(!CONFIG.api || registrado){ // sem servidor (ou já registrado): só abre o WhatsApp
+      $('next').hidden=false;
+      if(!CONFIG.whatsapp){ $('status').textContent='Protótipo: o número do WhatsApp ainda não foi configurado. Use "Copiar pedido" para ver o texto.'; return; }
+      $('status').textContent='Abrindo o WhatsApp…';
+      abrirWhats(window.open('','_blank'));
+      return;
+    }
+
+    // A aba precisa ser aberta já no clique, senão o navegador bloqueia como pop-up.
+    var janela=CONFIG.whatsapp?window.open('','_blank'):null;
+    ocupado(true); $('status').textContent='';
+    registrar(r.d).then(function(res){
+      if(res.status===201 && res.json.numero){
+        pedidoNo=res.json.numero; registrado=true; render();
+      } else if(res.status===422){
+        if(janela) janela.close();
+        $('status').textContent='Confira os campos marcados.'; validar(dados(),true); return;
+      } else if(res.status===429){
+        $('status').textContent=res.json.erro||'Muitos pedidos seguidos.';
+      }
+      $('next').hidden=false;
+      if(CONFIG.whatsapp){ $('status').textContent='Abrindo o WhatsApp…'; abrirWhats(janela); }
+      else $('status').textContent='Pedido '+pedidoNo+' registrado (protótipo, sem WhatsApp configurado).';
+    }).catch(function(){
+      // servidor fora do ar: segue com o número local
+      $('next').hidden=false;
+      if(CONFIG.whatsapp){ abrirWhats(janela); } else $('status').textContent='Servidor indisponível; o pedido seguiria pelo WhatsApp.';
+    }).finally(function(){ ocupado(false); });
   });
   $('copy').addEventListener('click',function(){
     var r=render(), done=function(m){$('status').textContent=m};

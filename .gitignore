@@ -1,5 +1,7 @@
-.DS_Store
-Thumbs.db
 *.log
+.DS_Store
 .env
 /bin/
+Thumbs.db
+go.work
+go.work.sum

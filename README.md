@@ -30,12 +30,20 @@ Tudo que muda com frequência fica em `web/js/config.js`:
 - `whatsapp`: número só com dígitos, com DDI e DDD (ex.: `5511999998888`). Enquanto estiver vazio, o site fica em modo protótipo: o botão de envio não abre o WhatsApp e aparece "Copiar pedido (teste)".
 - `servicos`: lista de serviços. `max` é quantas dessas peças um carro tem; `exclusivo: true` trava os outros serviços (pintura completa).
 - `regiao`: texto da região atendida.
+- `api`: endereço do servidor Go (fase 3). Vazio = o site funciona só com o WhatsApp.
 
 ## Publicar
 
 A cada push na `main` que mexe em `web/`, o GitHub Actions publica o site. Configuração única no GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-## Próximas fases
+## Servidor (fase 3)
 
-- Fotos de antes e depois em `web/img/`.
-- Backend em Go (Gin + PostgreSQL) servindo a mesma pasta `web/`: pedidos gravados com número sequencial, upload das fotos pelo site e painel de atendimento.
+Backend em Go (Gin + PostgreSQL) que grava os pedidos com número sequencial e oferece a API do painel. O site continua funcionando sem ele. Detalhes, rotas e como rodar: [docs/fase3.md](docs/fase3.md).
+
+```
+cmd/server/          ponto de entrada
+internal/config/     variáveis de ambiente
+internal/banco/      conexão e migrações (SQL embutido no binário)
+internal/pedidos/    regras, repositório, rotas e testes
+internal/servidor/   roteador, senha do painel, CORS, limite por IP
+```
