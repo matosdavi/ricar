@@ -71,7 +71,8 @@ func (r *repoFalso) Criar(_ context.Context, p NovoPedido) (Criado, error) {
 	r.criados = append(r.criados, p)
 	return Criado{Numero: "RC-00001", CriadoEm: hoje}, nil
 }
-func (r *repoFalso) Listar(context.Context, string, int) ([]Resumo, error) { return []Resumo{}, nil }
+func (r *repoFalso) Listar(context.Context, Filtro) ([]Resumo, error) { return []Resumo{}, nil }
+func (r *repoFalso) Atualizar(context.Context, string, Dados) error   { return nil }
 func (r *repoFalso) Buscar(context.Context, string) (Detalhe, error) {
 	return Detalhe{}, ErrNaoEncontrado
 }
@@ -131,4 +132,36 @@ func TestCriarHandler(t *testing.T) {
 			t.Fatal("pedido de robô foi gravado")
 		}
 	})
+}
+
+func TestValidarPainel(t *testing.T) {
+	p := pedidoOK()
+	p.CidadeBairro = "" // no painel, bairro é opcional
+	p.Telefone = "(11) 9 9999-8888"
+	p.Normalizar()
+	if e := p.ValidarPainel(hoje); e != nil {
+		t.Fatalf("esperava sem erro, veio %v", e)
+	}
+	p.Telefone = "9999"
+	if e := p.ValidarPainel(hoje); e["telefone"] == "" {
+		t.Fatalf("telefone curto deveria dar erro: %v", e)
+	}
+}
+
+func TestValidarDados(t *testing.T) {
+	v, s := 50000, 60000
+	d := Dados{ValorOrcado: &v, Sinal: &s}
+	if e := d.Validar(); e["sinal_centavos"] == "" {
+		t.Fatal("sinal maior que o valor deveria dar erro")
+	}
+	data := "31/12/2026"
+	d = Dados{DataAgendada: &data}
+	if e := d.Validar(); e["data_agendada"] == "" {
+		t.Fatal("data fora do formato deveria dar erro")
+	}
+	vazia := ""
+	d = Dados{DataAgendada: &vazia, Telefone: "11 99999-8888"}
+	if e := d.Validar(); e != nil || d.DataAgendada != nil || d.Telefone != "11999998888" {
+		t.Fatalf("data vazia deveria virar nil e telefone só dígitos: %v %+v", e, d)
+	}
 }

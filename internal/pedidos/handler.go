@@ -48,18 +48,65 @@ func (h *Handler) Criar(c *gin.Context) {
 	c.JSON(http.StatusCreated, criado)
 }
 
-// Listar mostra os pedidos no painel. GET /api/pedidos?status=novo&limite=50
+// CriarPainel cadastra o pedido de quem chamou direto no WhatsApp. POST /api/painel/pedidos
+func (h *Handler) CriarPainel(c *gin.Context) {
+	var p NovoPedido
+	if err := c.ShouldBindJSON(&p); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"erro": "Não conseguimos ler o pedido."})
+		return
+	}
+	p.Site, p.ViaPainel = "", true
+	p.Normalizar()
+	if erros := p.ValidarPainel(h.Agora()); erros != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"erro": "Alguns campos precisam de ajuste.", "erros": erros})
+		return
+	}
+	criado, err := h.Repo.Criar(c.Request.Context(), p)
+	if err != nil {
+		slog.Error("criar pedido (painel)", "erro", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": "Não conseguimos registrar o pedido agora."})
+		return
+	}
+	c.JSON(http.StatusCreated, criado)
+}
+
+// Atualizar grava telefone, valor, sinal e data. PATCH /api/painel/pedidos/:numero
+func (h *Handler) Atualizar(c *gin.Context) {
+	var d Dados
+	if err := c.ShouldBindJSON(&d); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"erro": "Não conseguimos ler os dados."})
+		return
+	}
+	if erros := d.Validar(); erros != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"erro": "Alguns campos precisam de ajuste.", "erros": erros})
+		return
+	}
+	err := h.Repo.Atualizar(c.Request.Context(), strings.ToUpper(c.Param("numero")), d)
+	if errors.Is(err, ErrNaoEncontrado) {
+		c.JSON(http.StatusNotFound, gin.H{"erro": "Pedido não encontrado."})
+		return
+	}
+	if err != nil {
+		slog.Error("atualizar pedido", "erro", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": "Não conseguimos salvar."})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// Listar mostra os pedidos no painel. GET /api/painel/pedidos?abertos=1 ou ?status=novo
 func (h *Handler) Listar(c *gin.Context) {
 	status := c.Query("status")
 	if status != "" && !StatusValido(status) {
 		c.JSON(http.StatusBadRequest, gin.H{"erro": "Status inválido.", "validos": Status})
 		return
 	}
-	limite, _ := strconv.Atoi(c.DefaultQuery("limite", "50"))
-	if limite < 1 || limite > 200 {
-		limite = 50
+	limite, _ := strconv.Atoi(c.DefaultQuery("limite", "200"))
+	if limite < 1 || limite > 500 {
+		limite = 200
 	}
-	lista, err := h.Repo.Listar(c.Request.Context(), status, limite)
+	f := Filtro{Status: status, Abertos: c.Query("abertos") == "1", Limite: limite}
+	lista, err := h.Repo.Listar(c.Request.Context(), f)
 	if err != nil {
 		slog.Error("listar pedidos", "erro", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"erro": "Não conseguimos carregar os pedidos."})
@@ -68,7 +115,7 @@ func (h *Handler) Listar(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"pedidos": lista})
 }
 
-// Buscar traz um pedido completo. GET /api/pedidos/:numero
+// Buscar traz um pedido completo. GET /api/painel/pedidos/:numero
 func (h *Handler) Buscar(c *gin.Context) {
 	d, err := h.Repo.Buscar(c.Request.Context(), strings.ToUpper(c.Param("numero")))
 	if errors.Is(err, ErrNaoEncontrado) {
@@ -83,7 +130,7 @@ func (h *Handler) Buscar(c *gin.Context) {
 	c.JSON(http.StatusOK, d)
 }
 
-// MudarStatus avança o pedido no atendimento. PATCH /api/pedidos/:numero/status
+// MudarStatus avança o pedido no atendimento. PATCH /api/painel/pedidos/:numero/status
 func (h *Handler) MudarStatus(c *gin.Context) {
 	var body struct {
 		Status string `json:"status"`

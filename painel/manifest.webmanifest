@@ -1,0 +1,10 @@
+{
+  "name": "Painel RiCar",
+  "short_name": "RiCar",
+  "start_url": "/painel/",
+  "scope": "/painel/",
+  "display": "standalone",
+  "background_color": "#f3f4f2",
+  "theme_color": "#b3261e",
+  "icons": [{ "src": "icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

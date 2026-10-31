@@ -18,6 +18,8 @@ type Config struct {
 	PainelSenha   string   // PAINEL_SENHA
 	Origens       []string // CORS_ORIGENS: sites que podem chamar a API, separados por vírgula
 	PastaWeb      string   // PASTA_WEB (padrão ./web)
+	PastaPainel   string   // PASTA_PAINEL (padrão ./painel)
+	SessaoSegredo string   // SESSAO_SEGREDO: texto aleatório longo que assina o login do painel
 }
 
 func Carregar() (Config, error) {
@@ -27,6 +29,8 @@ func Carregar() (Config, error) {
 		PainelUsuario: os.Getenv("PAINEL_USUARIO"),
 		PainelSenha:   os.Getenv("PAINEL_SENHA"),
 		PastaWeb:      valor("PASTA_WEB", "web"),
+		PastaPainel:   valor("PASTA_PAINEL", "painel"),
+		SessaoSegredo: os.Getenv("SESSAO_SEGREDO"),
 	}
 	for _, o := range strings.Split(os.Getenv("CORS_ORIGENS"), ",") {
 		if o = strings.TrimSpace(o); o != "" {
@@ -41,6 +45,9 @@ func Carregar() (Config, error) {
 	}
 	if c.PainelUsuario == "" || len(c.PainelSenha) < 8 {
 		errs = append(errs, errors.New("PAINEL_USUARIO e PAINEL_SENHA (8+ caracteres) são obrigatórios"))
+	}
+	if len(c.SessaoSegredo) < 32 {
+		errs = append(errs, errors.New("SESSAO_SEGREDO precisa de 32+ caracteres (gere com: openssl rand -hex 32)"))
 	}
 	return c, errors.Join(errs...)
 }

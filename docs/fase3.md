@@ -30,15 +30,28 @@ Status, na ordem do atendimento: `novo` → `aguardando_fotos` → `orcamento_en
 
 As migrações rodam sozinhas quando o servidor sobe.
 
+## Painel da atendente (`painel/`, em /painel/)
+
+Feito para o celular e responsivo no PC. Só existe no servidor Go: o GitHub Pages publica apenas `web/`.
+
+- **Login próprio:** usuário e senha do `.env`. O aparelho fica conectado por 30 dias (cookie assinado com `SESSAO_SEGREDO`, protegido contra uso por outros sites).
+- **Lista por etapa:** filtros no topo com a contagem de cada etapa. Os pedidos parados há mais tempo aparecem primeiro, e um selo amarelo avisa quando a bola está com a gente há 2 dias ou mais.
+- **Pedido:** botão grande para mover à próxima etapa (com anotação opcional), botão para abrir a conversa no WhatsApp, valor, sinal ("usar 50%"), data agendada, telefone e o histórico.
+- **Novo pedido:** cadastro manual para quem chamou direto no WhatsApp (a maioria dos clientes). Só nome, carro e um serviço são obrigatórios.
+- Dá para adicionar à tela inicial do celular como um app (Compartilhar → Adicionar à Tela de Início).
+
 ## API
 
 | Rota | Quem usa | O que faz |
 | --- | --- | --- |
 | `GET /api/saude` | monitoramento | responde `{"ok":true}` |
 | `POST /api/pedidos` | site (público) | valida e grava o pedido; devolve `{"numero":"RC-00001"}`. Limite de 10 pedidos por hora por IP e campo-armadilha contra robôs |
-| `GET /api/pedidos?status=novo` | painel (senha) | lista os pedidos mais recentes |
-| `GET /api/pedidos/RC-00001` | painel (senha) | pedido completo com histórico |
-| `PATCH /api/pedidos/RC-00001/status` | painel (senha) | `{"status":"agendado","nota":"sinal pago"}` |
+| `POST /api/sessao` · `DELETE /api/sessao` | painel | entrar (`{"usuario","senha"}`, 10 tentativas a cada 15 min por IP) e sair |
+| `GET /api/painel/pedidos?abertos=1` ou `?status=finalizado` | painel (logado) | lista |
+| `POST /api/painel/pedidos` | painel (logado) | cadastro manual (bairro opcional, telefone opcional) |
+| `GET /api/painel/pedidos/RC-00001` | painel (logado) | pedido completo com histórico |
+| `PATCH /api/painel/pedidos/RC-00001` | painel (logado) | `{"telefone","valor_orcado_centavos","sinal_centavos","data_agendada"}` |
+| `PATCH /api/painel/pedidos/RC-00001/status` | painel (logado) | `{"status":"agendado","nota":"sinal pago"}` |
 
 Erros de validação voltam com status 422 e um campo por erro, com as mesmas mensagens do site:
 ```json
@@ -51,7 +64,7 @@ Erros de validação voltam com status 422 e um campo por erro, com as mesmas me
 cp .env.exemplo .env
 make deps      # primeira vez
 make banco     # PostgreSQL no Docker
-make rodar     # http://localhost:8080 (site + API)
+make rodar     # http://localhost:8080 (site + API) e http://localhost:8080/painel/
 make testar
 ```
 
@@ -59,7 +72,6 @@ Para o site falar com o servidor, ponha o endereço em `web/js/config.js` → `a
 
 ## Próximos passos
 
-1. **Painel da atendente** (tela responsiva, celular e PC): lista por status, detalhe do pedido, botões para avançar o status, valor e sinal.
-2. **Upload de fotos** no site, com link das fotos no recibo.
-3. **Hospedagem** do servidor e do banco. Opções a decidir: Fly.io, Render, Railway ou uma VPS; todas rodam o `Dockerfile`.
-4. Login de verdade (sessão) no lugar do usuário e senha do navegador, se mais gente for usar o painel.
+1. **Hospedagem gratuita:** servidor no Render (plano grátis) e banco no Neon (plano grátis), ambos rodando o `Dockerfile` / `DATABASE_URL`.
+2. **Fotos de antes e depois** do site em `web/img/` (poucas e fixas, não precisam de armazenamento extra).
+3. Upload das fotos dos clientes pelo site, se fizer falta (hoje elas chegam pelo WhatsApp).

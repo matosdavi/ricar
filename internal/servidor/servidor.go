@@ -1,8 +1,7 @@
-// Package servidor monta o roteador: API pública, API do painel (com senha) e o site.
+// Package servidor monta o roteador: API pública, login e API do painel, telas do painel e o site.
 package servidor
 
 import (
-	"crypto/subtle"
 	"net/http"
 	"sync"
 	"time"
@@ -11,41 +10,38 @@ import (
 
 	"github.com/matosdavi/ricar/internal/config"
 	"github.com/matosdavi/ricar/internal/pedidos"
+	"github.com/matosdavi/ricar/internal/sessao"
 )
 
 func Novo(cfg config.Config, ped *pedidos.Handler) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery(), cors(cfg.Origens))
+	ses := sessao.Nova(cfg.PainelUsuario, cfg.PainelSenha, cfg.SessaoSegredo)
 
 	api := r.Group("/api")
 	api.GET("/saude", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
 	api.POST("/pedidos", limitePorIP(10, time.Hour), ped.Criar)
 
-	// Painel: tudo aqui pede usuário e senha.
-	painel := api.Group("", autenticacao(cfg.PainelUsuario, cfg.PainelSenha))
+	// Login do painel: no máximo 10 tentativas a cada 15 minutos por IP.
+	api.POST("/sessao", limitePorIP(10, 15*time.Minute), ses.Entrar)
+	api.DELETE("/sessao", ses.Sair)
+
+	// Painel: tudo aqui exige estar logado.
+	painel := api.Group("/painel", ses.Exigir)
+	painel.GET("/sessao", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
 	painel.GET("/pedidos", ped.Listar)
+	painel.POST("/pedidos", ped.CriarPainel)
 	painel.GET("/pedidos/:numero", ped.Buscar)
+	painel.PATCH("/pedidos/:numero", ped.Atualizar)
 	painel.PATCH("/pedidos/:numero/status", ped.MudarStatus)
+
+	// Telas do painel (só no servidor Go, nunca no GitHub Pages).
+	r.GET("/painel", func(c *gin.Context) { c.Redirect(http.StatusMovedPermanently, "/painel/") })
+	r.StaticFS("/painel/", http.Dir(cfg.PastaPainel))
 
 	// O mesmo site do GitHub Pages, servido pelo Go.
 	r.NoRoute(gin.WrapH(http.FileServer(http.Dir(cfg.PastaWeb))))
 	return r
-}
-
-// autenticacao usa HTTP Basic: o navegador pede usuário e senha uma vez.
-// subtle.ConstantTimeCompare evita que o tempo de resposta denuncie a senha.
-func autenticacao(usuario, senha string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		u, s, ok := c.Request.BasicAuth()
-		if !ok ||
-			subtle.ConstantTimeCompare([]byte(u), []byte(usuario)) != 1 ||
-			subtle.ConstantTimeCompare([]byte(s), []byte(senha)) != 1 {
-			c.Header("WWW-Authenticate", `Basic realm="Painel RiCar", charset="UTF-8"`)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"erro": "Usuário ou senha incorretos."})
-			return
-		}
-		c.Next()
-	}
 }
 
 // cors deixa o site no GitHub Pages chamar a API hospedada em outro endereço.

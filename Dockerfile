@@ -10,7 +10,8 @@ FROM gcr.io/distroless/static-debian12
 WORKDIR /app
 COPY --from=build /out/server /app/server
 COPY web /app/web
-ENV PORTA=8080 PASTA_WEB=/app/web
+COPY painel /app/painel
+ENV PORTA=8080 PASTA_WEB=/app/web PASTA_PAINEL=/app/painel
 EXPOSE 8080
 USER nonroot
 ENTRYPOINT ["/app/server"]

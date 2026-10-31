@@ -75,7 +75,9 @@ type NovoPedido struct {
 	Nome         string `json:"nome"`
 	CidadeBairro string `json:"cidade_bairro"`
 	Origem       string `json:"origem"`
-	Site         string `json:"site"` // armadilha para robôs: campo escondido, pessoa nunca preenche
+	Telefone     string `json:"telefone"` // só no painel: o site não pede telefone
+	Site         string `json:"site"`     // armadilha para robôs: campo escondido, pessoa nunca preenche
+	ViaPainel    bool   `json:"-"`        // "-": nunca vem do JSON, só o servidor marca
 }
 
 // ErrosValidacao guarda um erro por campo, no mesmo formato que o site mostra.
@@ -102,11 +104,47 @@ func (p *NovoPedido) Normalizar() {
 	p.Nome = limpa(p.Nome, 60)
 	p.CidadeBairro = limpa(p.CidadeBairro, 60)
 	p.Origem = limpa(p.Origem, 40)
+	p.Telefone = SoDigitos(p.Telefone)
+}
+
+// SoDigitos tira tudo que não é número: "(11) 9 9999-8888" vira "11999998888".
+func SoDigitos(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// TelefoneValido aceita DDD + número (10 ou 11 dígitos), com ou sem o 55 na frente.
+func TelefoneValido(t string) bool {
+	n := len(t)
+	return n == 10 || n == 11 || (strings.HasPrefix(t, "55") && (n == 12 || n == 13))
 }
 
 // Validar aplica as mesmas regras do formulário do site. O servidor nunca
 // confia só no navegador: qualquer um pode mandar um JSON direto para a API.
 func (p NovoPedido) Validar(agora time.Time) ErrosValidacao {
+	return p.validar(agora, true)
+}
+
+// ValidarPainel é para o pedido que a atendente cadastra à mão (cliente que
+// chamou direto no WhatsApp): cidade e bairro viram opcionais e o telefone,
+// se vier, precisa ter DDD.
+func (p NovoPedido) ValidarPainel(agora time.Time) ErrosValidacao {
+	e := p.validar(agora, false)
+	if p.Telefone != "" && !TelefoneValido(p.Telefone) {
+		if e == nil {
+			e = ErrosValidacao{}
+		}
+		e["telefone"] = "Use DDD + número. Ex.: 11 99999-8888."
+	}
+	return e
+}
+
+func (p NovoPedido) validar(agora time.Time, exigeBairro bool) ErrosValidacao {
 	e := ErrosValidacao{}
 
 	if len(p.Itens) == 0 {
@@ -154,7 +192,7 @@ func (p NovoPedido) Validar(agora time.Time) ErrosValidacao {
 	if len([]rune(p.Nome)) < 2 {
 		e["nome"] = "Diga seu nome."
 	}
-	if len([]rune(p.CidadeBairro)) < 3 {
+	if exigeBairro && len([]rune(p.CidadeBairro)) < 3 {
 		e["cidade_bairro"] = "Diga sua cidade e bairro."
 	}
 
@@ -176,9 +214,52 @@ type Resumo struct {
 	Status       string    `json:"status"`
 	Cliente      string    `json:"cliente"`
 	CidadeBairro string    `json:"cidade_bairro"`
+	Telefone     string    `json:"telefone,omitempty"`
 	Veiculo      string    `json:"veiculo"`
 	Itens        []Item    `json:"itens"`
 	CriadoEm     time.Time `json:"criado_em"`
+	AtualizadoEm time.Time `json:"atualizado_em"` // para mostrar "parado há 3 dias"
+	DataAgendada *string   `json:"data_agendada,omitempty"`
+}
+
+// Filtro da lista do painel. Abertos = tudo menos finalizado e cancelado.
+type Filtro struct {
+	Status  string
+	Abertos bool
+	Limite  int
+}
+
+// Dados são os campos que a atendente preenche no pedido. Ponteiro nil = apagar o valor.
+type Dados struct {
+	Telefone     string  `json:"telefone"`
+	ValorOrcado  *int    `json:"valor_orcado_centavos"`
+	Sinal        *int    `json:"sinal_centavos"`
+	DataAgendada *string `json:"data_agendada"` // "2026-11-07"
+}
+
+func (d *Dados) Validar() ErrosValidacao {
+	e := ErrosValidacao{}
+	d.Telefone = SoDigitos(d.Telefone)
+	if d.Telefone != "" && !TelefoneValido(d.Telefone) {
+		e["telefone"] = "Use DDD + número. Ex.: 11 99999-8888."
+	}
+	if d.ValorOrcado != nil && (*d.ValorOrcado < 0 || *d.ValorOrcado > 10_000_000) {
+		e["valor_orcado_centavos"] = "Valor fora do esperado."
+	}
+	if d.Sinal != nil && (*d.Sinal < 0 || (d.ValorOrcado != nil && *d.Sinal > *d.ValorOrcado)) {
+		e["sinal_centavos"] = "O sinal não pode ser maior que o valor."
+	}
+	if d.DataAgendada != nil {
+		if *d.DataAgendada == "" {
+			d.DataAgendada = nil
+		} else if _, err := time.Parse("2006-01-02", *d.DataAgendada); err != nil {
+			e["data_agendada"] = "Data inválida."
+		}
+	}
+	if len(e) == 0 {
+		return nil
+	}
+	return e
 }
 
 // Evento é uma mudança de status na linha do tempo do pedido.
@@ -191,16 +272,15 @@ type Evento struct {
 // Detalhe é o pedido completo, para a tela do pedido no painel.
 type Detalhe struct {
 	Resumo
-	Ano          *int     `json:"ano,omitempty"` // ponteiro: nil quando o cliente não informou
-	Porte        string   `json:"porte"`
-	Cor          string   `json:"cor,omitempty"`
-	TipoPintura  string   `json:"tipo_pintura,omitempty"`
-	TemAmassado  bool     `json:"tem_amassado"`
-	Observacao   string   `json:"observacao,omitempty"`
-	Preferencia  string   `json:"preferencia,omitempty"`
-	Origem       string   `json:"origem,omitempty"`
-	ValorOrcado  *int     `json:"valor_orcado_centavos,omitempty"`
-	Sinal        *int     `json:"sinal_centavos,omitempty"`
-	DataAgendada *string  `json:"data_agendada,omitempty"`
-	Eventos      []Evento `json:"eventos"`
+	Ano         *int     `json:"ano,omitempty"` // ponteiro: nil quando o cliente não informou
+	Porte       string   `json:"porte"`
+	Cor         string   `json:"cor,omitempty"`
+	TipoPintura string   `json:"tipo_pintura,omitempty"`
+	TemAmassado bool     `json:"tem_amassado"`
+	Observacao  string   `json:"observacao,omitempty"`
+	Preferencia string   `json:"preferencia,omitempty"`
+	Origem      string   `json:"origem,omitempty"`
+	ValorOrcado *int     `json:"valor_orcado_centavos,omitempty"`
+	Sinal       *int     `json:"sinal_centavos,omitempty"`
+	Eventos     []Evento `json:"eventos"`
 }

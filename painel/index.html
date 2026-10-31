@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel RiCar</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#b3261e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Painel RiCar">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="painel.css">
+</head>
+<body>
+<header class="barra">
+  <a class="marca" href="#/"><b>RiCar</b><span>Painel</span></a>
+  <button class="link" id="sair" type="button" hidden>Sair</button>
+</header>
+
+<main id="app" aria-live="polite"><p class="carregando">Carregando…</p></main>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<!-- Catálogo de serviços e tipos de carro: o mesmo arquivo do site -->
+<script src="/js/config.js"></script>
+<script src="painel.js"></script>
+</body>
+</html>
