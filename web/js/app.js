@@ -95,9 +95,11 @@
     $('funilaria').hidden=!d.amassado;
     if(!d.itens.length && !d.modelo && !d.nome){ r.classList.add('vazio'); r.textContent='Seu pedido aparece aqui enquanto você preenche.'; }
     else { r.classList.remove('vazio'); r.textContent=t.replace(/\*/g,''); }
-    var send=$('send');
-    if(CONFIG.whatsapp || CONFIG.api){ send.removeAttribute('aria-disabled'); } else { send.setAttribute('aria-disabled','true'); }
-    if(tentou) validar(d,false);
+    // o botão só fica liberado com tudo o que é obrigatório preenchido (inclusive o "Entendi" das fotos)
+    var pend=REGRAS.filter(function(r){return !r.ok(d)});
+    var send=$('send'), pronto=!pend.length && (CONFIG.whatsapp || CONFIG.api);
+    if(pronto){ send.removeAttribute('aria-disabled'); } else { send.setAttribute('aria-disabled','true'); }
+    if(tentou) validar(d,false); else pendencias(pend);
     return {d:d,t:t};
   }
 
@@ -122,12 +124,21 @@
       if(!ok) erros.push(r);
     });
     var sm=$('summary');
+    sm.classList.remove('neutro'); sm.setAttribute('role','alert');
     if(erros.length){
       sm.hidden=false;
       sm.innerHTML='<b>'+(erros.length===1?'Falta 1 item':'Faltam '+erros.length+' itens')+' para enviar:</b><ul>'+erros.map(function(r){return '<li><button type="button" data-f="'+r.campo+'">'+r.nome+'</button></li>'}).join('')+'</ul>';
       if(focar) irPara(erros[0].campo);
     } else sm.hidden=true;
     return !erros.length;
+  }
+  // antes da primeira tentativa: lista neutra do que falta, sem vermelho
+  function pendencias(pend){
+    var sm=$('summary');
+    sm.classList.add('neutro'); sm.setAttribute('role','status');
+    if(!pend.length){ sm.hidden=true; return; }
+    sm.hidden=false;
+    sm.innerHTML='<b>Para liberar o envio, falta:</b><ul>'+pend.map(function(r){return '<li><button type="button" data-f="'+r.campo+'">'+r.nome+'</button></li>'}).join('')+'</ul>';
   }
   function irPara(id){var el=$(id); if(!el) return; el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'}); setTimeout(function(){el.focus({preventScroll:true})},250);}
   $('summary').addEventListener('click',function(e){var b=e.target.closest('button[data-f]'); if(b) irPara(b.dataset.f);});
