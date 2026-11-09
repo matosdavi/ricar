@@ -2,7 +2,7 @@
 window.CONFIG = {
   nome: 'Barão Pintura Automotiva',
   whatsapp: '5511968591162',  // só números, com DDI e DDD. Ex.: '5511999998888'
-  emojis: true,               // emojis no recibo do WhatsApp. Se aparecerem como "�" em algum celular, troque para false
+  emojis: false,              // emojis no recibo: desligados porque chegaram como "�". Teste com ?teste-emoji no endereço
   api: '',                    // endereço do servidor Go (fase 3). Vazio = sem servidor, só WhatsApp. Ex.: 'https://api.ricar.com.br'
   regiao: 'Embu das Artes, Taboão da Serra e região',
   // max = quantas dessas peças um carro tem; sem max = serviço único; exclusivo = trava os outros

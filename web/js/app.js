@@ -58,12 +58,20 @@
       amassado:$('amassado').checked, data:data?data.value:'', nome:$('nome').value.trim(), bairro:$('bairro').value.trim(), origem:$('origem').value, fotos:$('fotos-ok').checked};
   }
 
-  // Emojis: pelo atalho wa.me eles chegavam como "�", porque o wa.me redireciona para api.whatsapp.com
-  // e estraga o texto no caminho. Por isso o link usa api.whatsapp.com/send direto (ver linkWhats).
-  // Se ainda quebrar em algum aparelho, mude CONFIG.emojis para false.
-  function ic(e){ return CONFIG.emojis===false ? '' : e+' '; }
-  function item(){ return CONFIG.emojis===false ? '- ' : '▪️ '; }
-  function linkWhats(texto){ return 'https://api.whatsapp.com/send?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(texto); }
+  // Emojis: pelo link do WhatsApp eles chegaram como "�" (mesmo trocando wa.me por api.whatsapp.com).
+  // Por enquanto ficam desligados (CONFIG.emojis = false). Para testar outra forma sem afetar clientes,
+  // abra o site com ?teste-emoji no fim do endereço: liga os emojis e, no celular, abre o app direto
+  // pelo whatsapp://, sem passar pelo site do WhatsApp.
+  var TESTE_EMOJI=/[?&]teste-emoji/.test(location.search);
+  var COM_EMOJI=TESTE_EMOJI || CONFIG.emojis!==false;
+  var CELULAR=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  function ic(e){ return COM_EMOJI ? e+' ' : ''; }
+  function item(){ return COM_EMOJI ? '▪️ ' : '- '; }
+  function linkWhats(texto){
+    var q='phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(texto);
+    if(TESTE_EMOJI && CELULAR) return 'whatsapp://send?'+q;
+    return 'https://api.whatsapp.com/send?'+q;
+  }
   // recibo: só mostra o que foi preenchido (nada de "[modelo]" no texto)
   function texto(d){
     var L=[], sep='-----------------------------';
@@ -172,6 +180,7 @@
   }
   function abrirWhats(janela){
     var url=linkWhats(texto(dados()));
+    if(url.indexOf('whatsapp://')===0){ if(janela && !janela.closed) janela.close(); location.href=url; return; }
     if(janela && !janela.closed){ janela.location.href=url; } else { location.href=url; }
   }
   function ocupado(sim){
