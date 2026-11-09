@@ -1,4 +1,4 @@
-/* Painel RiCar: lista de pedidos por etapa, detalhe do pedido e cadastro manual.
+/* Painel Barão: lista de pedidos por etapa, detalhe do pedido e cadastro manual.
    Telas trocadas pelo endereço: #/ (lista), #/p/RC-00001 (pedido), #/novo (novo pedido). */
 (function(){
   'use strict';
@@ -159,7 +159,7 @@
             '<p class="dica">'+esc(et.acao)+'? Toque acima para mudar a etapa.</p>'
           : '<h2>'+esc(et.nome)+'</h2><p class="dica">Este pedido está encerrado. Se precisar, reabra mudando a etapa abaixo.</p>')+
           '<div class="botoes">'+
-            (p.telefone?'<a class="btn wpp" target="_blank" rel="noopener" href="'+esc(linkWhats(p.telefone,'Olá, '+primeiroNome+'! Aqui é da RiCar Pintura Automotiva, sobre o seu pedido '+p.numero+'.'))+'">Abrir conversa no WhatsApp</a>':'')+
+            (p.telefone?'<a class="btn wpp" target="_blank" rel="noopener" href="'+esc(linkWhats(p.telefone,'Olá, '+primeiroNome+'! Aqui é da Barão Pintura Automotiva, sobre o seu pedido '+p.numero+'.'))+'">Abrir conversa no WhatsApp</a>':'')+
           '</div>'+
           '<details><summary class="link">Mudar para outra etapa</summary><div class="campo" style="margin-top:8px">'+
             '<label for="outra">Etapa</label><select id="outra">'+ETAPAS.map(function(e){return '<option value="'+e.id+'"'+(e.id===p.status?' selected':'')+'>'+esc(e.nome)+'</option>'}).join('')+'</select>'+

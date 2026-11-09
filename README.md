@@ -1,4 +1,4 @@
-# RiCar Pintura Automotiva
+# Barão Pintura Automotiva
 
 Site de pedido de orçamento da RiCar. O cliente escolhe os serviços, informa o carro e os dados dele, e o site abre o WhatsApp com um recibo pronto para enviar. Depois, o cliente manda as fotos do carro na mesma conversa.
 
@@ -6,11 +6,11 @@ Site de pedido de orçamento da RiCar. O cliente escolhe os serviços, informa o
 
 ```
 web/              site estático (publicado no GitHub Pages)
+  img/            símbolo, logos e ícone da marca
   index.html
   css/style.css
   js/config.js    ← número do WhatsApp, serviços e região
   js/app.js       ← formulário, validação e recibo
-  img/            ← fotos de antes e depois
 .github/workflows/pages.yml   publicação automática a cada push na main
 ```
 

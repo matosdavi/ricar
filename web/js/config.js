@@ -1,7 +1,7 @@
 /* ===== CONFIGURAÇÃO: troque aqui quando tiver os dados ===== */
 window.CONFIG = {
-  nome: 'RiCar Pintura Automotiva',
-  whatsapp: '',               // só números, com DDI e DDD. Ex.: '5511999998888'
+  nome: 'Barão Pintura Automotiva',
+  whatsapp: '5511968591162',  // só números, com DDI e DDD. Ex.: '5511999998888'
   api: '',                    // endereço do servidor Go (fase 3). Vazio = sem servidor, só WhatsApp. Ex.: 'https://api.ricar.com.br'
   regiao: 'Embu das Artes, Taboão da Serra e região',
   // max = quantas dessas peças um carro tem; sem max = serviço único; exclusivo = trava os outros

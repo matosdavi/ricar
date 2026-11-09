@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><defs>
+  <linearGradient id="xcor-coroa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FB0FF"/><stop offset="1" stop-color="#2F7BEA"/></linearGradient>
+  <linearGradient id="xcor-gota" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E6F2FF"/><stop offset="1" stop-color="#8EC2FF"/></linearGradient>
+</defs>
+<g>
+  <path d="M100 18 C100 18 78 50 78 66 A22 22 0 0 0 122 66 C122 50 100 18 100 18 Z" fill="url(#xcor-gota)"/>
+  <path d="M92 60 Q92 50 98 42" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+  <path d="M30 148 L22 84 Q21 74 30 79 L66 104 L92 82 Q100 76 108 82 L134 104 L170 79 Q179 74 178 84 L170 148 Z" fill="url(#xcor-coroa)"/>
+  <path d="M40 132 L160 132" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity=".35"/>
+  <circle cx="24" cy="70" r="9" fill="#BFE0FF"/><circle cx="176" cy="70" r="9" fill="#BFE0FF"/>
+  <rect x="26" y="156" width="148" height="26" rx="8" fill="#1E5AA8"/>
+  <path d="M44 164 L84 164" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+</g></svg>
