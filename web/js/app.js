@@ -58,21 +58,17 @@
       amassado:$('amassado').checked, data:data?data.value:'', nome:$('nome').value.trim(), bairro:$('bairro').value.trim(), origem:$('origem').value, fotos:$('fotos-ok').checked};
   }
 
-  // Emojis: pelo link do WhatsApp eles chegaram como "�" (mesmo trocando wa.me por api.whatsapp.com).
-  // Por enquanto ficam desligados (CONFIG.emojis = false). Para testar outra forma sem afetar clientes,
-  // abra o site com ?teste-emoji no fim do endereço: liga os emojis e, no celular, abre o app direto
-  // pelo whatsapp://, sem passar pelo site do WhatsApp.
-  var TESTE_EMOJI=/[?&]teste-emoji/.test(location.search);
-  var COM_EMOJI=TESTE_EMOJI || CONFIG.emojis!==false;
+  // Emojis: pelo site do WhatsApp (wa.me ou api.whatsapp.com) eles chegam como "�".
+  // No celular, abrir o app direto pelo atalho whatsapp:// mantém os emojis (testado no iPhone).
+  // Então: celular -> whatsapp:// com emojis; computador ou falha -> api.whatsapp.com só com texto.
   var CELULAR=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  function ic(e){ return COM_EMOJI ? e+' ' : ''; }
-  function item(){ return COM_EMOJI ? '▪️ ' : '- '; }
-  function linkWhats(texto){
-    var q='phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(texto);
-    if(TESTE_EMOJI && CELULAR) return 'whatsapp://send?'+q;
-    return 'https://api.whatsapp.com/send?'+q;
-  }
-  // recibo: só mostra o que foi preenchido (nada de "[modelo]" no texto)
+  var COM_EMOJI=CELULAR && CONFIG.emojis!==false;
+  var emojiAgora=COM_EMOJI;                 // texto() consulta isto
+  function ic(e){ return emojiAgora ? e+' ' : ''; }
+  function item(){ return emojiAgora ? '▪️ ' : '- '; }
+  function textoCom(d, emoji){ var antes=emojiAgora; emojiAgora=emoji; var t=texto(d); emojiAgora=antes; return t; }
+  function linkWeb(d){ return 'https://api.whatsapp.com/send?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(textoCom(d,false)); }
+  function linkApp(d){ return 'whatsapp://send?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(textoCom(d,true)); }
   function texto(d){
     var L=[], sep='-----------------------------';
     L.push('*PEDIDO DE ORÇAMENTO · '+CONFIG.nome.toUpperCase()+'*');
@@ -178,9 +174,23 @@
       .then(function(res){ return res.json().catch(function(){return {}}).then(function(j){ return {status:res.status,json:j}; }); })
       .finally(function(){clearTimeout(timer)});
   }
+  var tentouApp=false;
   function abrirWhats(janela){
-    var url=linkWhats(texto(dados()));
-    if(url.indexOf('whatsapp://')===0){ if(janela && !janela.closed) janela.close(); location.href=url; return; }
+    var d=dados();
+    // celular: tenta o app direto (com emojis). Se o app não abrir em 2,5 s (sem WhatsApp,
+    // navegador de dentro do Instagram etc.) ou se for a segunda tentativa, vai pelo site, só texto.
+    if(COM_EMOJI && !tentouApp){
+      tentouApp=true;
+      if(janela && !janela.closed) janela.close();
+      var saiu=false, marcar=function(){saiu=true};
+      window.addEventListener('pagehide',marcar,{once:true});
+      window.addEventListener('blur',marcar,{once:true});
+      document.addEventListener('visibilitychange',function(){ if(document.hidden) saiu=true; },{once:true});
+      location.href=linkApp(d);
+      setTimeout(function(){ if(!saiu && !document.hidden) location.href=linkWeb(d); },2500);
+      return;
+    }
+    var url=linkWeb(d);
     if(janela && !janela.closed){ janela.location.href=url; } else { location.href=url; }
   }
   function ocupado(sim){
