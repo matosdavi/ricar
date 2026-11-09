@@ -58,6 +58,7 @@
       amassado:$('amassado').checked, data:data?data.value:'', nome:$('nome').value.trim(), bairro:$('bairro').value.trim(), origem:$('origem').value, fotos:$('fotos-ok').checked};
   }
 
+  // recibo: sem emoji de propósito. Pelo link do WhatsApp, emojis chegaram como "�" em alguns aparelhos.
   // recibo: só mostra o que foi preenchido (nada de "[modelo]" no texto)
   function texto(d){
     var L=[], sep='-----------------------------';
@@ -65,24 +66,24 @@
     L.push('Pedido nº: #'+pedidoNo);
     L.push('Feito em: '+quando);
     L.push(sep);
-    L.push('🚗 *VEÍCULO*');
+    L.push('*VEÍCULO*');
     var anoOk=/^\d{4}$/.test(d.ano)&&+d.ano>=1950&&+d.ano<=anoMax;
     L.push([d.modelo||'Modelo a informar', anoOk?d.ano:'', d.porte].filter(Boolean).join(' · '));
     var cor=[d.cor?'Cor: '+d.cor:'', d.tinta?'Pintura: '+d.tinta:''].filter(Boolean).join(' · ');
     if(cor) L.push(cor);
     L.push(sep);
     if(d.itens.length||d.amassado||d.obs){
-      L.push('🔧 *SERVIÇOS*');
-      d.itens.forEach(function(i){L.push('▪️ '+(i.q>1?i.q+' x ':'')+i.nome)});
-      if(d.amassado) L.push('▪️ Funilaria (tem amassado)');
-      if(d.obs) L.push('📝 '+d.obs);
+      L.push('*SERVIÇOS*');
+      d.itens.forEach(function(i){L.push('- '+(i.q>1?i.q+' x ':'')+i.nome)});
+      if(d.amassado) L.push('- Funilaria (tem amassado)');
+      if(d.obs) L.push('Observação: '+d.obs);
       L.push(sep);
     }
-    L.push('📅 Preferência: '+d.data);
-    var quem=[d.nome, d.bairro].filter(Boolean).join(' · '); if(quem) L.push('👤 '+quem);
+    L.push('*Preferência:* '+d.data);
+    var quem=[d.nome, d.bairro].filter(Boolean).join(' · '); if(quem) L.push('*Cliente:* '+quem);
     if(d.origem) L.push('Conheceu por: '+d.origem);
     L.push(sep);
-    L.push('📸 *FOTOS: eu envio a seguir, nesta conversa*');
+    L.push('*FOTOS: eu envio a seguir, nesta conversa*');
     L.push('1. Carro inteiro');
     L.push('2. Avaria de perto');
     L.push('3. Avaria de longe');
