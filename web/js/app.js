@@ -58,7 +58,12 @@
       amassado:$('amassado').checked, data:data?data.value:'', nome:$('nome').value.trim(), bairro:$('bairro').value.trim(), origem:$('origem').value, fotos:$('fotos-ok').checked};
   }
 
-  // recibo: sem emoji de propósito. Pelo link do WhatsApp, emojis chegaram como "�" em alguns aparelhos.
+  // Emojis: pelo atalho wa.me eles chegavam como "�", porque o wa.me redireciona para api.whatsapp.com
+  // e estraga o texto no caminho. Por isso o link usa api.whatsapp.com/send direto (ver linkWhats).
+  // Se ainda quebrar em algum aparelho, mude CONFIG.emojis para false.
+  function ic(e){ return CONFIG.emojis===false ? '' : e+' '; }
+  function item(){ return CONFIG.emojis===false ? '- ' : '▪️ '; }
+  function linkWhats(texto){ return 'https://api.whatsapp.com/send?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(texto); }
   // recibo: só mostra o que foi preenchido (nada de "[modelo]" no texto)
   function texto(d){
     var L=[], sep='-----------------------------';
@@ -66,24 +71,24 @@
     L.push('Pedido nº: #'+pedidoNo);
     L.push('Feito em: '+quando);
     L.push(sep);
-    L.push('*VEÍCULO*');
+    L.push(ic('🚗')+'*VEÍCULO*');
     var anoOk=/^\d{4}$/.test(d.ano)&&+d.ano>=1950&&+d.ano<=anoMax;
     L.push([d.modelo||'Modelo a informar', anoOk?d.ano:'', d.porte].filter(Boolean).join(' · '));
     var cor=[d.cor?'Cor: '+d.cor:'', d.tinta?'Pintura: '+d.tinta:''].filter(Boolean).join(' · ');
     if(cor) L.push(cor);
     L.push(sep);
     if(d.itens.length||d.amassado||d.obs){
-      L.push('*SERVIÇOS*');
-      d.itens.forEach(function(i){L.push('- '+(i.q>1?i.q+' x ':'')+i.nome)});
-      if(d.amassado) L.push('- Funilaria (tem amassado)');
-      if(d.obs) L.push('Observação: '+d.obs);
+      L.push(ic('🔧')+'*SERVIÇOS*');
+      d.itens.forEach(function(i){L.push(item()+(i.q>1?i.q+' x ':'')+i.nome)});
+      if(d.amassado) L.push(item()+'Funilaria (tem amassado)');
+      if(d.obs) L.push(ic('📝')+'Observação: '+d.obs);
       L.push(sep);
     }
-    L.push('*Preferência:* '+d.data);
-    var quem=[d.nome, d.bairro].filter(Boolean).join(' · '); if(quem) L.push('*Cliente:* '+quem);
+    L.push(ic('📅')+'*Preferência:* '+d.data);
+    var quem=[d.nome, d.bairro].filter(Boolean).join(' · '); if(quem) L.push(ic('👤')+'*Cliente:* '+quem);
     if(d.origem) L.push('Conheceu por: '+d.origem);
     L.push(sep);
-    L.push('*FOTOS: eu envio a seguir, nesta conversa*');
+    L.push(ic('📸')+'*FOTOS: eu envio a seguir, nesta conversa*');
     L.push('1. Carro inteiro');
     L.push('2. Avaria de perto');
     L.push('3. Avaria de longe');
@@ -166,7 +171,7 @@
       .finally(function(){clearTimeout(timer)});
   }
   function abrirWhats(janela){
-    var url='https://wa.me/'+CONFIG.whatsapp+'?text='+encodeURIComponent(texto(dados()));
+    var url=linkWhats(texto(dados()));
     if(janela && !janela.closed){ janela.location.href=url; } else { location.href=url; }
   }
   function ocupado(sim){
