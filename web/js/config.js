@@ -12,7 +12,6 @@ window.CONFIG = {
     {id:'capo',       nome:'Capô'},
     {id:'tampa',      nome:'Tampa traseira'},
     {id:'teto',       nome:'Teto'},
-    {id:'retoque',    nome:'Retoque de risco',   max:6},
     {id:'polimento',  nome:'Polimento completo'},
     {id:'completa',   nome:'Pintura completa',   exclusivo:true}
   ],

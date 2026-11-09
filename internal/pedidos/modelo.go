@@ -27,7 +27,6 @@ var Catalogo = []Servico{
 	{ID: "capo", Nome: "Capô"},
 	{ID: "tampa", Nome: "Tampa traseira"},
 	{ID: "teto", Nome: "Teto"},
-	{ID: "retoque", Nome: "Retoque de risco", Max: 6},
 	{ID: "polimento", Nome: "Polimento completo"},
 	{ID: "completa", Nome: "Pintura completa", Exclusivo: true},
 }
