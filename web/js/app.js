@@ -59,16 +59,21 @@
       amassado:$('amassado').checked, data:data?data.value:'', nome:$('nome').value.trim(), bairro:$('bairro').value.trim(), origem:$('origem').value, fotos:$('fotos-ok').checked};
   }
 
-  // Emojis: pelo site do WhatsApp (wa.me ou api.whatsapp.com) eles chegam como "�".
-  // No celular, abrir o app direto pelo atalho whatsapp:// mantém os emojis (testado no iPhone).
-  // Então: celular -> whatsapp:// com emojis; computador ou falha -> api.whatsapp.com só com texto.
+  // Emojis: pelo api.whatsapp.com (e wa.me) eles chegam como "�".
+  // Celular: o atalho whatsapp:// abre o app direto e mantém os emojis (testado no iPhone).
+  // Computador: o WhatsApp Web direto (web.whatsapp.com/send) mantém os emojis (testado).
+  // Se o app do celular não abrir, cai no api.whatsapp.com só com texto.
   var CELULAR=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  var COM_EMOJI=CELULAR && CONFIG.emojis!==false;
-  var emojiAgora=COM_EMOJI;                 // texto() consulta isto
+  var EMOJIS=CONFIG.emojis!==false;
+  var COM_EMOJI=CELULAR && EMOJIS;          // celular: tenta o app
+  var emojiAgora=EMOJIS;                    // texto() consulta isto
   function ic(e){ return emojiAgora ? e+' ' : ''; }
   function item(){ return emojiAgora ? '▪️ ' : '- '; }
   function textoCom(d, emoji){ var antes=emojiAgora; emojiAgora=emoji; var t=texto(d); emojiAgora=antes; return t; }
-  function linkWeb(d){ return 'https://api.whatsapp.com/send?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(textoCom(d,false)); }
+  function linkWeb(d){
+    if(!CELULAR && EMOJIS) return 'https://web.whatsapp.com/send?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(textoCom(d,true));
+    return 'https://api.whatsapp.com/send?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(textoCom(d,false));
+  }
   function linkApp(d){ return 'whatsapp://send?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(textoCom(d,true)); }
   function texto(d){
     var L=[], sep='-----------------------------';
