@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,6 +25,7 @@ type Repositorio interface {
 	MudarStatus(ctx context.Context, numero, status, nota string) error
 	Atualizar(ctx context.Context, numero string, d Dados) error
 	SalvarOrcamento(ctx context.Context, numero string, o Orcamento) error
+	ResumoMes(ctx context.Context, inicio, fim time.Time) (ResumoMes, error)
 }
 
 type RepoPG struct{ pool *pgxpool.Pool }
@@ -276,9 +278,19 @@ func (r *RepoPG) SalvarOrcamento(ctx context.Context, numero string, o Orcamento
 		if err != nil {
 			return err
 		}
-		// o histórico guarda a etapa atual com a anotação, sem mudar a etapa
+		nota := "Orçamento calculado: " + reaisTexto(o.Valor)
+		if o.Enviado {
+			nota = "Orçamento enviado pelo WhatsApp: " + reaisTexto(o.Valor)
+			if status == "novo" || status == "aguardando_fotos" {
+				status = "orcamento_enviado"
+				if _, err := tx.Exec(ctx, `UPDATE pedidos SET status = 'orcamento_enviado' WHERE id = $1`, id); err != nil {
+					return err
+				}
+			}
+		}
+		// o histórico guarda a etapa (nova ou a mesma) com a anotação
 		_, err = tx.Exec(ctx, `INSERT INTO pedido_eventos (pedido_id, status, nota) VALUES ($1, $2::status_pedido, $3)`,
-			id, status, "Orçamento calculado: "+reaisTexto(o.Valor))
+			id, status, nota)
 		return err
 	})
 }

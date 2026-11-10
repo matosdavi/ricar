@@ -47,6 +47,7 @@ func Novo(cfg config.Config, ped *pedidos.Handler, calc *calculadora.Handler, pi
 	painel.PATCH("/pedidos/:numero", ped.Atualizar)
 	painel.PATCH("/pedidos/:numero/status", ped.MudarStatus)
 	painel.PUT("/pedidos/:numero/orcamento", ped.SalvarOrcamento)
+	painel.GET("/resumo", ped.Resumo)
 	painel.GET("/calculadora", calc.Buscar)
 	painel.PUT("/calculadora", calc.Salvar)
 

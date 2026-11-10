@@ -65,7 +65,10 @@ func TestValidar(t *testing.T) {
 }
 
 // repoFalso guarda os pedidos em memória: testa o handler sem banco.
-type repoFalso struct{ criados []NovoPedido }
+type repoFalso struct {
+	criados     []NovoPedido
+	inicio, fim time.Time // último mês pedido ao ResumoMes
+}
 
 func (r *repoFalso) Criar(_ context.Context, p NovoPedido) (Criado, error) {
 	r.criados = append(r.criados, p)
@@ -74,6 +77,10 @@ func (r *repoFalso) Criar(_ context.Context, p NovoPedido) (Criado, error) {
 func (r *repoFalso) Listar(context.Context, Filtro) ([]Resumo, error)         { return []Resumo{}, nil }
 func (r *repoFalso) Atualizar(context.Context, string, Dados) error           { return nil }
 func (r *repoFalso) SalvarOrcamento(context.Context, string, Orcamento) error { return nil }
+func (r *repoFalso) ResumoMes(_ context.Context, inicio, fim time.Time) (ResumoMes, error) {
+	r.inicio, r.fim = inicio, fim
+	return ResumoMes{Servicos: []Contagem{}, Origens: []Contagem{}}, nil
+}
 func (r *repoFalso) Buscar(context.Context, string) (Detalhe, error) {
 	return Detalhe{}, ErrNaoEncontrado
 }
@@ -188,5 +195,38 @@ func TestValidarOrcamento(t *testing.T) {
 	}
 	if got := reaisTexto(85000); got != "R$ 850" {
 		t.Errorf("reaisTexto = %q", got)
+	}
+}
+
+func TestResumoMes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &repoFalso{}
+	h := NovoHandler(repo)
+	h.Agora = func() time.Time { return time.Date(2026, 12, 1, 1, 0, 0, 0, time.UTC) } // ainda 30/11 em Brasília
+	r := gin.New()
+	r.GET("/r", h.Resumo)
+
+	casos := []struct {
+		url, mes string
+		codigo   int
+	}{
+		{"/r", "2026-11", 200},
+		{"/r?mes=2026-02", "2026-02", 200},
+		{"/r?mes=fevereiro", "", 400},
+	}
+	for _, c := range casos {
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest("GET", c.url, nil))
+		if w.Code != c.codigo {
+			t.Errorf("%s: código %d", c.url, w.Code)
+			continue
+		}
+		if c.codigo == 200 {
+			var m ResumoMes
+			json.Unmarshal(w.Body.Bytes(), &m)
+			if m.Mes != c.mes || repo.fim.Sub(repo.inicio) < 28*24*time.Hour {
+				t.Errorf("%s: mês %q, de %v a %v", c.url, m.Mes, repo.inicio, repo.fim)
+			}
+		}
 	}
 }

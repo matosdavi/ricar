@@ -21,6 +21,8 @@
   var proxima = function(id){ var i=ETAPAS.findIndex(function(e){return e.id===id}); return i>=0 && i<5 ? ETAPAS[i+1] : null; };
   // etapas em que o pedido depende de alguém agir: parado há 2+ dias merece atenção
   var COBRAR = {novo:1, aguardando_fotos:2, orcamento_enviado:2, pronto:2};
+  // etapas em que mandar o orçamento pelo WhatsApp já move o pedido para "Orçamento enviado"
+  var ANTES_DO_ENVIO = {novo:true, aguardando_fotos:true};
 
   /* ---------- utilidades ---------- */
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]}); }
@@ -108,6 +110,7 @@
 
   function telaLista(){
     document.getElementById('sair').hidden=false; marcarAba('pedidos');
+    orcPendente=null; // saiu do cadastro sem salvar: esquece o orçamento pendente
     app.innerHTML='<p class="carregando">Carregando pedidos…</p>';
     var fechado = filtro==='finalizado'||filtro==='cancelado';
     // Os números das etapas abertas vêm sempre da lista de abertos; vendo Finalizados/Cancelados,
@@ -185,7 +188,7 @@
               '<span class="dica">'+esc(o.resumo||'')+'</span>'+
               '<span class="dica">Sinal '+esc(C.brl(o.resultado.sinal))+' · prazo '+(o.resultado.semanas>1?'até '+o.resultado.semanas+' semanas':'até 1 semana')+(o.calculado_em?' · calculado '+esc(dataHora(o.calculado_em)):'')+'</span></div>'+
             '<div class="botoes">'+
-              (p.telefone?'<a class="btn wpp" target="_blank" rel="noopener" href="'+esc(linkWhats(p.telefone,o.mensagem||''))+'">Enviar no WhatsApp</a>':'')+
+              (p.telefone?'<button class="btn wpp" type="button" id="enviar-orc">Enviar no WhatsApp</button>':'')+
               '<button class="btn claro" type="button" id="copiar-orc">Copiar mensagem</button>'+
               '<a class="btn claro" href="#/calc/'+esc(p.numero)+'">Refazer cálculo</a></div>'
           : '<p class="dica">Ainda sem orçamento. Com as fotos do cliente em mãos, calcule aqui: os serviços e o carro do pedido já vêm marcados.</p>'+
@@ -237,6 +240,17 @@
       });
       var co=document.getElementById('copiar-orc');
       if(co) co.addEventListener('click',function(){ copiar(o.mensagem||''); });
+      var eo=document.getElementById('enviar-orc');
+      if(eo) eo.addEventListener('click',function(){
+        var url=linkWhats(p.telefone,o.mensagem||'');
+        if(!ANTES_DO_ENVIO[p.status]){ window.open(url,'_blank'); return; }
+        // abre a aba já no clique (senão o navegador bloqueia) e move o pedido para "Orçamento enviado"
+        var janela=window.open(url,'_blank');
+        api('PATCH','/painel/pedidos/'+encodeURIComponent(p.numero)+'/status',{status:'orcamento_enviado',nota:'Orçamento enviado pelo WhatsApp'})
+          .then(function(){ aviso('Pedido em "Orçamento enviado"'); telaPedido(p.numero); })
+          .catch(falhou);
+        if(!janela) location.href=url;
+      });
       document.getElementById('metade').addEventListener('click',function(){
         var v=paraCentavos(document.getElementById('valor').value);
         if(!v){ aviso('Preencha o valor primeiro.', true); document.getElementById('valor').focus(); return; }
@@ -273,7 +287,8 @@
     app.innerHTML=
       '<a class="link voltar" href="#/">← Pedidos</a>'+
       '<div class="titulo"><h1>Novo pedido</h1></div>'+
-      '<p class="dica">Para clientes que chamaram direto no WhatsApp. Só nome, carro e um serviço são obrigatórios.</p>'+
+      (orcPendente?'<div class="alerta"><span>Orçamento da calculadora: <b>'+esc(C.brl(orcPendente.total))+'</b> ('+esc(orcPendente.resumo)+'). Ele será salvo no pedido. Se mudar os serviços aqui, refaça o cálculo depois.</span><button class="btn claro" type="button" id="sem-orc">Cadastrar sem o orçamento</button></div>'
+        :'<p class="dica">Para clientes que chamaram direto no WhatsApp. Só nome, carro e um serviço são obrigatórios.</p>')+
       '<form class="coluna" id="f-novo" novalidate>'+
         '<section class="bloco"><h2>Cliente</h2>'+
           '<div class="duas empilha">'+
@@ -309,6 +324,18 @@
       CONFIG.servicos.forEach(function(s){ if(s.exclusivo) return; var c=document.getElementById('s-'+s.id); if(on&&c.checked) c.checked=false; c.disabled=on; document.getElementById('row-'+s.id).classList.toggle('off',on); });
     }
     document.getElementById('b-svc').addEventListener('change',regras);
+    if(orcPendente){ // veio da calculadora: marca o que foi calculado
+      var sp=orcPendente.sel;
+      sp.itens.forEach(function(i){ var c=document.getElementById('s-'+i.id); if(!c) return; c.checked=true; var q=document.getElementById('q-'+i.id); if(q) q.value=i.q; });
+      carregarBases().then(function(cb){
+        var po=cb.bases.portes.find(function(x){return x.id===sp.porte}), ti=cb.bases.tintas.find(function(x){return x.id===sp.tinta});
+        var r=po&&document.querySelector('input[name=n-porte][value="'+po.nome+'"]'); if(r) r.checked=true;
+        if(ti) document.getElementById('n-tinta').value=ti.nome;
+      }).catch(function(){});
+      if(sp.fun>0) document.getElementById('n-amassado').checked=true;
+      regras();
+      document.getElementById('sem-orc').addEventListener('click',function(){ orcPendente=null; telaNovo(); });
+    }
     document.getElementById('n-ano').addEventListener('input',function(){ this.value=this.value.replace(/\D/g,''); });
     document.getElementById('n-nome').focus();
 
@@ -326,7 +353,18 @@
       mostrar(erros);
       if(Object.keys(erros).length) return;
       var b=document.getElementById('criar'); b.disabled=true; b.textContent='Cadastrando…';
-      api('POST','/painel/pedidos',corpo).then(function(r){ aviso('Pedido '+r.numero+' cadastrado'); location.hash='#/p/'+r.numero; })
+      var pend=orcPendente;
+      api('POST','/painel/pedidos',corpo).then(function(r){
+        if(!pend){ aviso('Pedido '+r.numero+' cadastrado'); location.hash='#/p/'+r.numero; return; }
+        // salva no pedido novo o orçamento feito na calculadora, já com o nome do cliente na mensagem
+        return carregarBases().then(function(cb){
+          var calc=C.calcular(cb.bases, pend.sel), msg=C.mensagem(calc,{nome:corpo.nome, veiculo:corpo.modelo, numero:r.numero});
+          return api('PUT','/painel/pedidos/'+encodeURIComponent(r.numero)+'/orcamento',{calculo:C.foto(calc,msg,cb.atualizado_em),
+            valor_orcado_centavos:Math.round(calc.total*100), sinal_centavos:Math.round(calc.sinal*100)});
+        }).then(function(){ aviso('Pedido '+r.numero+' cadastrado com o orçamento'); },
+                function(){ aviso('Pedido '+r.numero+' cadastrado, mas o orçamento não foi salvo. Refaça o cálculo.', true); })
+          .then(function(){ orcPendente=null; location.hash='#/p/'+r.numero; });
+      })
         .catch(function(e){ if(e&&e.erros){ mostrar(e.erros); } else falhou(e); b.disabled=false; b.textContent='Cadastrar pedido'; });
     });
     function mostrar(erros){
@@ -351,6 +389,7 @@
     catch(e){ aviso('Não deu para copiar. Selecione o texto e copie.', true); }
   }
   var selAvulsa = null; // a calculadora avulsa lembra o que foi marcado enquanto o painel está aberto
+  var orcPendente = null; // orçamento da calculadora avulsa esperando virar pedido (botão "Criar pedido")
 
   function telaCalc(numero){
     document.getElementById('sair').hidden=false;
@@ -461,9 +500,11 @@
           '<div class="kpi"><b>'+r.semanas+'</b><span>'+(r.semanas>1?'fins de semana':'fim de semana')+' para entregar'+(r.sel.troca?'. Depois, '+r.diasTroca+(r.diasTroca>1?' dias':' dia')+' de troca com o dono da oficina B':'')+'</span></div></div>'+
           '<div class="campo"><span class="rotulo">Mensagem para o cliente</span><pre class="msg">'+esc(msg)+'</pre></div>'+
           '<div class="botoes">'+
-            (p?'<button class="btn primario" type="button" id="c-salvar">Salvar no pedido</button>'+(p.telefone?'<button class="btn wpp" type="button" id="c-enviar">Salvar e enviar no WhatsApp</button>':''):'')+
+            (p?'<button class="btn primario" type="button" id="c-salvar">Salvar no pedido</button>'+(p.telefone?'<button class="btn wpp" type="button" id="c-enviar">Salvar e enviar no WhatsApp</button>':''):'<button class="btn primario" type="button" id="c-criar">Criar pedido com este orçamento</button>')+
             '<button class="btn claro" type="button" id="c-copiar">Copiar mensagem</button></div>'+
-          (p&&!p.telefone?'<p class="dica">Sem telefone no pedido: copie a mensagem e mande na conversa do cliente.</p>':'');
+          (p&&!p.telefone?'<p class="dica">Sem telefone no pedido: copie a mensagem e mande na conversa do cliente.</p>':'')+
+          (p&&p.telefone&&ANTES_DO_ENVIO[p.status]?'<p class="dica">Ao enviar, o pedido passa para "Orçamento enviado".</p>':'')+
+          (!p?'<p class="dica">Fechou com alguém que pediu preço por telefone? Crie o pedido com este orçamento já salvo.</p>':'');
         // Só redesenha se mudou: o "change" de um campo dispara quando a pessoa toca no botão,
         // e redesenhar naquela hora trocaria o botão embaixo do dedo e o toque se perderia.
         if(h!==ultimoHtml){ el.innerHTML=h; ultimoHtml=h; }
@@ -477,6 +518,7 @@
         else if(t.id==='c-copiar') copiar(msg);
         else if(t.id==='c-salvar') salvar(false, t);
         else if(t.id==='c-enviar') salvar(true, t);
+        else if(t.id==='c-criar'){ orcPendente={sel:r.sel, total:r.total, resumo:C.resumo(r)}; location.hash='#/novo'; }
       });
       var limpar=document.getElementById('limpar');
       if(limpar) limpar.addEventListener('click',function(){ selAvulsa=null; telaCalc(null); });
@@ -487,9 +529,9 @@
         var janela=enviar?window.open('','_blank'):null;
         botao.disabled=true;
         api('PUT','/painel/pedidos/'+encodeURIComponent(p.numero)+'/orcamento',{
-          calculo:C.foto(r,msg,cb.atualizado_em), valor_orcado_centavos:Math.round(r.total*100), sinal_centavos:Math.round(r.sinal*100)
+          calculo:C.foto(r,msg,cb.atualizado_em), valor_orcado_centavos:Math.round(r.total*100), sinal_centavos:Math.round(r.sinal*100), enviado:enviar
         }).then(function(){
-          aviso('Orçamento salvo no pedido');
+          aviso(enviar && ANTES_DO_ENVIO[p.status] ? 'Orçamento salvo. Pedido em "Orçamento enviado"' : 'Orçamento salvo no pedido');
           if(janela){ if(!janela.closed) janela.location.href=linkWhats(p.telefone,msg); else location.href=linkWhats(p.telefone,msg); }
           location.hash='#/p/'+p.numero;
         }).catch(function(e){ if(janela&&!janela.closed) janela.close(); botao.disabled=false; falhou(e); });
@@ -600,6 +642,40 @@
     }
   }
 
+  /* ---------- resumo do mês ---------- */
+  var MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  function mesVizinho(mes, delta){ var p=mes.split('-'); var d=new Date(+p[0], +p[1]-1+delta, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+  function telaResumo(mes){
+    document.getElementById('sair').hidden=false; marcarAba('resumo');
+    app.innerHTML='<p class="carregando">Carregando resumo…</p>';
+    api('GET','/painel/resumo'+(mes?'?mes='+mes:'')).then(function(m){
+      var p=m.mes.split('-'), nomeMes=MESES[+p[1]-1]+' de '+p[0];
+      var hoje=new Date(), atual=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
+      var taxa=m.com_orcamento?Math.round(m.fechados/m.com_orcamento*100):0;
+      function barras(lista, nome){
+        if(!lista.length) return '<p class="dica">Nenhum pedido neste mês.</p>';
+        var max=lista[0].quantidade||1;
+        return '<ul class="barras">'+lista.map(function(x){ return '<li><span>'+esc(nome?nome(x.nome):x.nome)+'</span><span class="nivel"><i style="width:'+(x.quantidade/max*100)+'%"></i></span><b>'+x.quantidade+'</b></li>'; }).join('')+'</ul>';
+      }
+      app.innerHTML=
+        '<div class="titulo"><h1>Resumo</h1></div>'+
+        '<div class="mes"><a class="btn claro" href="#/resumo/'+mesVizinho(m.mes,-1)+'" aria-label="Mês anterior">‹</a><h2>'+esc(nomeMes)+'</h2>'+
+          (m.mes<atual?'<a class="btn claro" href="#/resumo/'+mesVizinho(m.mes,1)+'" aria-label="Próximo mês">›</a>':'<span class="btn claro" aria-hidden="true" style="visibility:hidden">›</span>')+'</div>'+
+        '<div class="numeros">'+
+          '<div class="numero"><b>'+m.recebidos+'</b><span>pedidos chegaram</span></div>'+
+          '<div class="numero"><b>'+m.com_orcamento+'</b><span>receberam orçamento</span></div>'+
+          '<div class="numero"><b>'+m.fechados+'</b><span>fecharam'+(m.com_orcamento?' ('+taxa+'% dos orçamentos)':'')+'</span></div>'+
+          '<div class="numero"><b>'+m.cancelados+'</b><span>cancelados</span></div>'+
+          '<div class="numero dinheiro"><b>'+esc(C.brl(m.valor_fechado_centavos/100))+'</b><span>em serviços fechados</span></div>'+
+          '<div class="numero dinheiro"><b>'+esc(C.brl(m.sinais_centavos/100))+'</b><span>de sinal nesses serviços</span></div>'+
+          '<div class="numero dinheiro"><b>'+esc(C.brl(m.valor_entregue_centavos/100))+'</b><span>'+m.entregues+(m.entregues===1?' carro entregue':' carros entregues')+' no mês</span></div>'+
+        '</div>'+
+        '<p class="dica">Os números de cima contam os pedidos que chegaram neste mês. "Fecharam" = agendado ou depois. "Entregues" = finalizados neste mês, mesmo que tenham chegado antes.</p>'+
+        '<div class="layout"><section class="bloco"><h2>Serviços mais pedidos</h2>'+barras(m.servicos, nomeServico)+'</section>'+
+        '<section class="bloco"><h2>Como conheceram</h2>'+barras(m.origens)+'</section></div>';
+    }).catch(falhou);
+  }
+
   /* ---------- rotas ---------- */
   function rota(){
     var h=location.hash||'#/';
@@ -609,6 +685,8 @@
     var c=h.match(/^#\/calc(?:\/([A-Za-z0-9-]+))?$/);
     if(c) return telaCalc(c[1]?c[1].toUpperCase():null);
     if(h==='#/precos') return telaPrecos();
+    var rm=h.match(/^#\/resumo(?:\/(\d{4}-\d{2}))?$/);
+    if(rm) return telaResumo(rm[1]||null);
     return telaLista();
   }
   window.addEventListener('hashchange',rota);

@@ -296,6 +296,9 @@ type Orcamento struct {
 	Calculo json.RawMessage `json:"calculo"` // serviços marcados, porte, tinta, partes do preço...
 	Valor   int             `json:"valor_orcado_centavos"`
 	Sinal   int             `json:"sinal_centavos"`
+	// Enviado = a atendente mandou pelo WhatsApp agora; o pedido que estava em "Novo"
+	// ou "Aguardando fotos" passa para "Orçamento enviado".
+	Enviado bool `json:"enviado"`
 }
 
 func (o Orcamento) Validar() ErrosValidacao {
