@@ -2,9 +2,9 @@
 FROM golang:1.24-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
-RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
+# go mod tidy completa o go.sum (no ambiente de build há acesso aos pacotes do Go)
+RUN go mod tidy && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
 FROM gcr.io/distroless/static-debian12
 WORKDIR /app

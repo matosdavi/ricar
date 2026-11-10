@@ -69,7 +69,7 @@ type repoFalso struct{ criados []NovoPedido }
 
 func (r *repoFalso) Criar(_ context.Context, p NovoPedido) (Criado, error) {
 	r.criados = append(r.criados, p)
-	return Criado{Numero: "RC-00001", CriadoEm: hoje}, nil
+	return Criado{Numero: "BP-00001", CriadoEm: hoje}, nil
 }
 func (r *repoFalso) Listar(context.Context, Filtro) ([]Resumo, error) { return []Resumo{}, nil }
 func (r *repoFalso) Atualizar(context.Context, string, Dados) error   { return nil }
@@ -102,7 +102,7 @@ func TestCriarHandler(t *testing.T) {
 		}
 		var out Criado
 		_ = json.Unmarshal(w.Body.Bytes(), &out)
-		if out.Numero != "RC-00001" {
+		if out.Numero != "BP-00001" {
 			t.Fatalf("número %q", out.Numero)
 		}
 	})

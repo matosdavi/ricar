@@ -6,7 +6,7 @@
   var now=new Date(), anoMax=now.getFullYear()+1;
 
   // número do pedido: dia+mês + 4 dígitos (vira sequencial quando houver servidor)
-  var pedidoNo='RC'+pad(now.getDate())+pad(now.getMonth()+1)+'-'+String(Math.floor(1000+Math.random()*9000));
+  var pedidoNo='BP'+pad(now.getDate())+pad(now.getMonth()+1)+'-'+String(Math.floor(1000+Math.random()*9000));
   var quando=pad(now.getDate())+'/'+pad(now.getMonth()+1)+'/'+now.getFullYear()+' - '+pad(now.getHours())+':'+pad(now.getMinutes());
 
   // serviços
@@ -160,7 +160,7 @@
   $('ano').addEventListener('input',function(){var v=this.value.replace(/\D/g,''); if(v!==this.value) this.value=v;});
 
   /* Com CONFIG.api, o pedido é gravado no servidor antes de abrir o WhatsApp e ganha
-     número sequencial (RC-00001). Se o servidor falhar, o pedido segue pelo WhatsApp
+     número sequencial (BP-00001). Se o servidor falhar, o pedido segue pelo WhatsApp
      com o número local, para o cliente nunca ficar travado. */
   var registrado=false, enviando=false;
   function payload(d){

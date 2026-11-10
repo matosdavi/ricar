@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	Porta         string   // PORTA (padrão 8080)
+	Porta         string   // PORTA ou PORT (padrão 8080)
 	BancoURL      string   // DATABASE_URL
 	PainelUsuario string   // PAINEL_USUARIO
 	PainelSenha   string   // PAINEL_SENHA
@@ -24,7 +24,7 @@ type Config struct {
 
 func Carregar() (Config, error) {
 	c := Config{
-		Porta:         valor("PORTA", "8080"),
+		Porta:         valor("PORTA", valor("PORT", "8080")), // o Render informa a porta em PORT
 		BancoURL:      os.Getenv("DATABASE_URL"),
 		PainelUsuario: os.Getenv("PAINEL_USUARIO"),
 		PainelSenha:   os.Getenv("PAINEL_SENHA"),

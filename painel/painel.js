@@ -1,5 +1,5 @@
 /* Painel Barão: lista de pedidos por etapa, detalhe do pedido e cadastro manual.
-   Telas trocadas pelo endereço: #/ (lista), #/p/RC-00001 (pedido), #/novo (novo pedido). */
+   Telas trocadas pelo endereço: #/ (lista), #/p/BP-00001 (pedido), #/novo (novo pedido). */
 (function(){
   'use strict';
   var CONFIG = window.CONFIG || {servicos:[], portes:['Hatch','Sedan','SUV','Picape']};

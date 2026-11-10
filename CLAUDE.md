@@ -7,7 +7,7 @@ Identidade visual: azul (marinho #0A1F3D, azul #1E5AA8, azul vivo #4C9AFF), Barl
 - Fase atual: site estático em `web/` (HTML/CSS/JS sem framework, sem build), publicado no GitHub Pages.
 - O site gera um recibo de pedido e abre o WhatsApp (`api.whatsapp.com/send`) com o texto. Emojis chegam quebrados (�) por `wa.me` e `api.whatsapp.com`; por isso, no celular o site abre o app direto por `whatsapp://` com emojis (testado no iPhone), e no computador ou se o app não abrir usa `api.whatsapp.com` só com texto (`CONFIG.emojis`). Ao mudar CSS/JS, troque o `?v=` em `web/index.html`. Não mostra preço ao cliente: o valor só sai depois de avaliar as fotos.
 - Textos em português do Brasil, linguagem simples (o público são clientes de oficina de bairro e a família do Ricardo).
-- Fase 3 em andamento: backend em Go (Gin, PostgreSQL/pgx) em `cmd/` e `internal/`, servindo `web/`. Já tem API de pedidos e o painel da atendente (`painel/`, só no servidor, nunca no GitHub Pages); falta a hospedagem (gratuita: Render + Neon). Ver docs/fase3.md.
+- Fase 3 em andamento: backend em Go (Gin, PostgreSQL/pgx) em `cmd/` e `internal/`, servindo `web/`. Já tem API de pedidos e o painel da atendente (`painel/`, só no servidor, nunca no GitHub Pages); falta a hospedagem (gratuita: Render + Neon, passo a passo em docs/deploy.md). Pedidos numerados BP-00001. Ver docs/fase3.md.
 - O catálogo de serviços existe em dois lugares: `web/js/config.js` (o painel também usa este) e `internal/pedidos/modelo.go`. Mudou um, mude o outro.
 - O Davi está aprendendo Go: comente conceitos de Go no código quando forem novos, em português.
 - A calculadora de preço é ferramenta interna e NÃO deve ir para o site público.
