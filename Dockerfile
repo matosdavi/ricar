@@ -3,8 +3,10 @@ FROM golang:1.24-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 COPY . .
-# go mod tidy completa o go.sum (no ambiente de build há acesso aos pacotes do Go)
-RUN go mod tidy && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
+# -mod=mod deixa o build baixar e anotar no go.sum só o que o servidor usa,
+# nas versões já fixadas no go.mod. (O go mod tidy buscava também as
+# dependências de teste das bibliotecas, e uma delas exige um Go mais novo.)
+RUN CGO_ENABLED=0 go build -mod=mod -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
 
 FROM gcr.io/distroless/static-debian12
 WORKDIR /app
