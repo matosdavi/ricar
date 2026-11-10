@@ -15,11 +15,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Source+Sans+3:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="painel.css?v=20261110d">
+<link rel="stylesheet" href="painel.css?v=20261110f">
 </head>
 <body>
 <header class="barra">
   <a class="marca" href="#/"><b>Barão</b><span>Painel</span></a>
+  <nav class="abas" id="abas" aria-label="Telas" hidden>
+    <a href="#/" data-a="pedidos">Pedidos</a>
+    <a href="#/calc" data-a="calc">Calculadora</a>
+    <a href="#/precos" data-a="precos">Preços</a>
+  </nav>
   <button class="link" id="sair" type="button" hidden>Sair</button>
 </header>
 
@@ -29,6 +34,7 @@
 
 <!-- Catálogo de serviços e tipos de carro: o mesmo arquivo do site -->
 <script src="/js/config.js"></script>
-<script src="painel.js?v=20261110d"></script>
+<script src="calculadora.js?v=20261110f"></script>
+<script src="painel.js?v=20261110f"></script>
 </body>
 </html>

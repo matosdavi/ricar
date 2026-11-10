@@ -3,6 +3,7 @@ package pedidos
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
@@ -22,6 +23,7 @@ type Repositorio interface {
 	Buscar(ctx context.Context, numero string) (Detalhe, error)
 	MudarStatus(ctx context.Context, numero, status, nota string) error
 	Atualizar(ctx context.Context, numero string, d Dados) error
+	SalvarOrcamento(ctx context.Context, numero string, o Orcamento) error
 }
 
 type RepoPG struct{ pool *pgxpool.Pool }
@@ -167,12 +169,13 @@ func (r *RepoPG) Buscar(ctx context.Context, numero string) (Detalhe, error) {
 	var id int64
 	var cor, tinta, obs, pref, origem *string
 	var ano *int16
+	var orc []byte // JSONB; nil quando o pedido ainda não tem orçamento calculado
 	dest := append(scanResumo(&id, &d.Resumo),
-		&ano, &d.Porte, &cor, &tinta, &d.TemAmassado, &obs, &pref, &origem, &d.ValorOrcado, &d.Sinal)
+		&ano, &d.Porte, &cor, &tinta, &d.TemAmassado, &obs, &pref, &origem, &d.ValorOrcado, &d.Sinal, &orc)
 	err := r.pool.QueryRow(ctx, `
 		SELECT `+colunasResumo+`,
 		       p.veiculo_ano, p.veiculo_porte, p.veiculo_cor, p.tipo_pintura, p.tem_amassado,
-		       p.observacao, p.preferencia_data, c.origem, p.valor_orcado_centavos, p.sinal_centavos
+		       p.observacao, p.preferencia_data, c.origem, p.valor_orcado_centavos, p.sinal_centavos, p.orcamento
 		FROM pedidos p JOIN clientes c ON c.id = p.cliente_id
 		WHERE p.numero = $1`, numero).Scan(dest...)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -186,6 +189,9 @@ func (r *RepoPG) Buscar(ctx context.Context, numero string) (Detalhe, error) {
 		d.Ano = &a
 	}
 	d.Cor, d.TipoPintura, d.Observacao, d.Preferencia, d.Origem = deref(cor), deref(tinta), deref(obs), deref(pref), deref(origem)
+	if len(orc) > 0 {
+		d.Orcamento = orc
+	}
 
 	d.Itens = []Item{}
 	rows, err := r.pool.Query(ctx, `SELECT servico, quantidade FROM pedido_itens WHERE pedido_id = $1 ORDER BY id`, id)
@@ -253,4 +259,39 @@ func (r *RepoPG) Atualizar(ctx context.Context, numero string, d Dados) error {
 		_, err = tx.Exec(ctx, `UPDATE clientes SET telefone = $2 WHERE id = $1`, clienteID, vazioParaNil(d.Telefone))
 		return err
 	})
+}
+
+// SalvarOrcamento grava o cálculo, o valor e o sinal, e anota no histórico.
+func (r *RepoPG) SalvarOrcamento(ctx context.Context, numero string, o Orcamento) error {
+	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		var id int64
+		var status string
+		err := tx.QueryRow(ctx, `
+			UPDATE pedidos SET orcamento = $2, valor_orcado_centavos = $3, sinal_centavos = $4, atualizado_em = now()
+			WHERE numero = $1 RETURNING id, status::TEXT`,
+			numero, o.Calculo, o.Valor, o.Sinal).Scan(&id, &status)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNaoEncontrado
+		}
+		if err != nil {
+			return err
+		}
+		// o histórico guarda a etapa atual com a anotação, sem mudar a etapa
+		_, err = tx.Exec(ctx, `INSERT INTO pedido_eventos (pedido_id, status, nota) VALUES ($1, $2::status_pedido, $3)`,
+			id, status, "Orçamento calculado: "+reaisTexto(o.Valor))
+		return err
+	})
+}
+
+// reaisTexto escreve centavos como "R$ 1.250" (ou "R$ 1.250,50").
+func reaisTexto(centavos int) string {
+	inteiro, resto := centavos/100, centavos%100
+	s := strconv.Itoa(inteiro)
+	for i := len(s) - 3; i > 0; i -= 3 { // ponto a cada 3 dígitos, da direita para a esquerda
+		s = s[:i] + "." + s[i:]
+	}
+	if resto != 0 {
+		s += fmt.Sprintf(",%02d", resto)
+	}
+	return "R$ " + s
 }

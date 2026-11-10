@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/matosdavi/ricar/internal/calculadora"
 	"github.com/matosdavi/ricar/internal/config"
 	"github.com/matosdavi/ricar/internal/pedidos"
 	"github.com/matosdavi/ricar/internal/sessao"
@@ -16,7 +17,7 @@ import (
 
 // ping confere o banco; o site chama /api/saude ao abrir para "acordar" o servidor e o banco
 // (no plano grátis os dois dormem), assim o pedido é registrado rápido na hora do envio.
-func Novo(cfg config.Config, ped *pedidos.Handler, ping func(context.Context) error) *gin.Engine {
+func Novo(cfg config.Config, ped *pedidos.Handler, calc *calculadora.Handler, ping func(context.Context) error) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery(), cors(cfg.Origens))
 	ses := sessao.Nova(cfg.PainelUsuario, cfg.PainelSenha, cfg.SessaoSegredo)
@@ -45,6 +46,9 @@ func Novo(cfg config.Config, ped *pedidos.Handler, ping func(context.Context) er
 	painel.GET("/pedidos/:numero", ped.Buscar)
 	painel.PATCH("/pedidos/:numero", ped.Atualizar)
 	painel.PATCH("/pedidos/:numero/status", ped.MudarStatus)
+	painel.PUT("/pedidos/:numero/orcamento", ped.SalvarOrcamento)
+	painel.GET("/calculadora", calc.Buscar)
+	painel.PUT("/calculadora", calc.Salvar)
 
 	// Telas do painel (só no servidor Go, nunca no GitHub Pages).
 	r.GET("/painel", func(c *gin.Context) { c.Redirect(http.StatusMovedPermanently, "/painel/") })
@@ -65,7 +69,7 @@ func cors(origens []string) gin.HandlerFunc {
 		if o := c.GetHeader("Origin"); permitida[o] {
 			c.Header("Access-Control-Allow-Origin", o)
 			c.Header("Vary", "Origin")
-			c.Header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS")
 			c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		}
 		if c.Request.Method == http.MethodOptions {

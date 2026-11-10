@@ -1,4 +1,4 @@
-// Comando server: sobe a API e o site da RiCar.
+// Comando server: sobe a API, o painel e o site da Barão.
 //
 // Conceito Go: tudo em cmd/ vira um executável; o código reaproveitável fica
 // em internal/, que o Go impede outros projetos de importar.
@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/matosdavi/ricar/internal/banco"
+	"github.com/matosdavi/ricar/internal/calculadora"
 	"github.com/matosdavi/ricar/internal/config"
 	"github.com/matosdavi/ricar/internal/pedidos"
 	"github.com/matosdavi/ricar/internal/servidor"
@@ -52,9 +53,10 @@ func rodar() error {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	handler := pedidos.NovoHandler(pedidos.NovoRepoPG(pool))
+	calc := calculadora.NovoHandler(calculadora.NovoRepoPG(pool))
 	srv := &http.Server{
 		Addr:              ":" + cfg.Porta,
-		Handler:           servidor.Novo(cfg, handler, pool.Ping),
+		Handler:           servidor.Novo(cfg, handler, calc, pool.Ping),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

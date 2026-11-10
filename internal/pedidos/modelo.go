@@ -6,6 +6,7 @@
 package pedidos
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -285,4 +286,33 @@ type Detalhe struct {
 	ValorOrcado *int     `json:"valor_orcado_centavos,omitempty"`
 	Sinal       *int     `json:"sinal_centavos,omitempty"`
 	Eventos     []Evento `json:"eventos"`
+	// Conceito Go: json.RawMessage guarda o JSON como veio, sem o servidor precisar
+	// conhecer cada campo. O cálculo é do painel; o servidor só guarda a "foto".
+	Orcamento json.RawMessage `json:"orcamento,omitempty"`
+}
+
+// Orcamento é o que a calculadora do painel manda ao salvar no pedido.
+type Orcamento struct {
+	Calculo json.RawMessage `json:"calculo"` // serviços marcados, porte, tinta, partes do preço...
+	Valor   int             `json:"valor_orcado_centavos"`
+	Sinal   int             `json:"sinal_centavos"`
+}
+
+func (o Orcamento) Validar() ErrosValidacao {
+	e := ErrosValidacao{}
+	if o.Valor <= 0 || o.Valor > 10_000_000 {
+		e["valor_orcado_centavos"] = "Valor fora do esperado."
+	}
+	if o.Sinal < 0 || o.Sinal > o.Valor {
+		e["sinal_centavos"] = "O sinal não pode ser maior que o valor."
+	}
+	// o cálculo precisa ser um objeto JSON ({...}) e pequeno
+	var obj map[string]any
+	if len(o.Calculo) == 0 || len(o.Calculo) > 16<<10 || json.Unmarshal(o.Calculo, &obj) != nil {
+		e["calculo"] = "Cálculo inválido."
+	}
+	if len(e) == 0 {
+		return nil
+	}
+	return e
 }

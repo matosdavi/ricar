@@ -1,5 +1,6 @@
-/* Painel Barão: lista de pedidos por etapa, detalhe do pedido e cadastro manual.
-   Telas trocadas pelo endereço: #/ (lista), #/p/BP-00001 (pedido), #/novo (novo pedido). */
+/* Painel Barão: pedidos por etapa, detalhe do pedido, cadastro manual, calculadora e preços.
+   Telas trocadas pelo endereço: #/ (lista), #/p/BP-00001 (pedido), #/novo (novo pedido),
+   #/calc (calculadora avulsa), #/calc/BP-00001 (orçamento do pedido), #/precos (bases da calculadora). */
 (function(){
   'use strict';
   var CONFIG = window.CONFIG || {servicos:[], portes:['Hatch','Sedan','SUV','Picape']};
@@ -45,6 +46,12 @@
   var toastTimer;
   function aviso(msg, ruim){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.toggle('ruim',!!ruim); t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.hidden=true},2600); }
 
+  // Abas do topo (Pedidos, Calculadora, Preços): aparecem depois do login e marcam a tela atual.
+  function marcarAba(id){
+    var n=document.getElementById('abas'); n.hidden=false;
+    n.querySelectorAll('a').forEach(function(a){ if(a.dataset.a===id) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
+  }
+
   /* ---------- API ---------- */
   function api(metodo, caminho, corpo){
     return fetch('/api'+caminho,{method:metodo,credentials:'same-origin',headers:corpo?{'Content-Type':'application/json'}:{},body:corpo?JSON.stringify(corpo):undefined})
@@ -58,7 +65,7 @@
 
   /* ---------- login ---------- */
   function telaLogin(){
-    document.getElementById('sair').hidden=true;
+    document.getElementById('sair').hidden=true; document.getElementById('abas').hidden=true;
     app.innerHTML =
       '<form class="login" id="f-login" novalidate>'+
         '<h1>Entrar</h1>'+
@@ -100,7 +107,7 @@
   }
 
   function telaLista(){
-    document.getElementById('sair').hidden=false;
+    document.getElementById('sair').hidden=false; marcarAba('pedidos');
     app.innerHTML='<p class="carregando">Carregando pedidos…</p>';
     var fechado = filtro==='finalizado'||filtro==='cancelado';
     // Os números das etapas abertas vêm sempre da lista de abertos; vendo Finalizados/Cancelados,
@@ -142,10 +149,10 @@
 
   /* ---------- detalhe ---------- */
   function telaPedido(numero){
-    document.getElementById('sair').hidden=false;
+    document.getElementById('sair').hidden=false; marcarAba('pedidos');
     app.innerHTML='<p class="carregando">Carregando pedido…</p>';
     api('GET','/painel/pedidos/'+encodeURIComponent(numero)).then(function(p){
-      var et=etapa(p.status), prox=proxima(p.status);
+      var et=etapa(p.status), prox=proxima(p.status), o=p.orcamento&&p.orcamento.resultado?p.orcamento:null;
       var primeiroNome=(p.cliente||'').split(' ')[0];
       var html=
         '<a class="link voltar" href="#/">← Pedidos</a>'+
@@ -171,8 +178,22 @@
             '<button class="btn claro" id="mudar" type="button">Mudar etapa</button></div></details>'+
         '</section>'+
 
-        // orçamento
-        '<form class="bloco" id="f-dados" novalidate><h2>Orçamento e contato</h2>'+
+        // orçamento calculado
+        '<section class="bloco" id="b-orc"><h2>Orçamento</h2>'+
+          (o?
+            '<div class="orc"><strong class="preco">'+esc(C.brl(o.resultado.total))+'</strong>'+
+              '<span class="dica">'+esc(o.resumo||'')+'</span>'+
+              '<span class="dica">Sinal '+esc(C.brl(o.resultado.sinal))+' · prazo '+(o.resultado.semanas>1?'até '+o.resultado.semanas+' semanas':'até 1 semana')+(o.calculado_em?' · calculado '+esc(dataHora(o.calculado_em)):'')+'</span></div>'+
+            '<div class="botoes">'+
+              (p.telefone?'<a class="btn wpp" target="_blank" rel="noopener" href="'+esc(linkWhats(p.telefone,o.mensagem||''))+'">Enviar no WhatsApp</a>':'')+
+              '<button class="btn claro" type="button" id="copiar-orc">Copiar mensagem</button>'+
+              '<a class="btn claro" href="#/calc/'+esc(p.numero)+'">Refazer cálculo</a></div>'
+          : '<p class="dica">Ainda sem orçamento. Com as fotos do cliente em mãos, calcule aqui: os serviços e o carro do pedido já vêm marcados.</p>'+
+            '<a class="btn primario cheio" href="#/calc/'+esc(p.numero)+'">Calcular orçamento</a>')+
+        '</section>'+
+
+        // valor, sinal e contato
+        '<form class="bloco" id="f-dados" novalidate><h2>Valor, sinal e contato</h2>'+
           '<div class="campo"><label for="tel">Telefone (WhatsApp)</label><input type="tel" id="tel" inputmode="tel" placeholder="(11) 99999-8888" value="'+esc(telefoneBonito(p.telefone))+'"><p class="erro" id="e-tel" hidden></p></div>'+
           '<div class="duas empilha">'+
             '<div class="campo"><label for="valor">Valor (R$)</label><input type="text" id="valor" inputmode="decimal" placeholder="0,00" value="'+esc(centavosCampo(p.valor_orcado_centavos))+'"><p class="erro" id="e-valor" hidden></p></div>'+
@@ -214,6 +235,8 @@
         var s=document.getElementById('outra').value; if(s===p.status){ aviso('Já está nesta etapa.'); return; }
         mudar(s, 'Mudado manualmente', this);
       });
+      var co=document.getElementById('copiar-orc');
+      if(co) co.addEventListener('click',function(){ copiar(o.mensagem||''); });
       document.getElementById('metade').addEventListener('click',function(){
         var v=paraCentavos(document.getElementById('valor').value);
         if(!v){ aviso('Preencha o valor primeiro.', true); document.getElementById('valor').focus(); return; }
@@ -242,7 +265,7 @@
 
   /* ---------- novo pedido (cliente que chamou direto no WhatsApp) ---------- */
   function telaNovo(){
-    document.getElementById('sair').hidden=false;
+    document.getElementById('sair').hidden=false; marcarAba('pedidos');
     var svcs=CONFIG.servicos.map(function(s){
       return '<label class="svc" id="row-'+s.id+'"><span class="topo"><input type="checkbox" id="s-'+s.id+'">'+esc(s.nome)+'</span>'+
         (s.max?'<span class="qtd">Quantas? <input type="number" id="q-'+s.id+'" min="1" max="'+s.max+'" value="1" aria-label="Quantidade de '+esc(s.nome)+'"></span>':'')+'</label>';
@@ -313,12 +336,279 @@
     }
   }
 
+  /* ---------- calculadora ---------- */
+  var C = window.CalcBarao;
+  var basesCache = null;
+  // As bases (tabela de preços) vêm do servidor uma vez e ficam guardadas enquanto o painel está aberto.
+  function carregarBases(forcar){
+    if(!basesCache || forcar) basesCache = api('GET','/painel/calculadora').catch(function(e){ basesCache=null; throw e; });
+    return basesCache;
+  }
+  function brl(v){ return C.brl(v); }
+  function copiar(texto){
+    var ok=function(){ aviso('Mensagem copiada'); };
+    try{ navigator.clipboard.writeText(texto).then(ok,function(){ aviso('Não deu para copiar. Selecione o texto e copie.', true); }); }
+    catch(e){ aviso('Não deu para copiar. Selecione o texto e copie.', true); }
+  }
+  var selAvulsa = null; // a calculadora avulsa lembra o que foi marcado enquanto o painel está aberto
+
+  function telaCalc(numero){
+    document.getElementById('sair').hidden=false;
+    marcarAba(numero?'pedidos':'calc');
+    app.innerHTML='<p class="carregando">Carregando calculadora…</p>';
+    Promise.all([carregarBases(), numero?api('GET','/painel/pedidos/'+encodeURIComponent(numero)):null]).then(function(rs){
+      var cb=rs[0], b=cb.bases, p=rs[1], avisosPedido=[];
+      var sel;
+      if(p && p.orcamento && p.orcamento.sel){
+        sel=C.normalizar(b, p.orcamento.sel);
+        if(cb.atualizado_em && p.orcamento.calculado_em && cb.atualizado_em>p.orcamento.calculado_em)
+          avisosPedido.push('Os preços foram alterados depois deste cálculo ('+dataHora(cb.atualizado_em)+'). O valor pode ter mudado; confira antes de salvar.');
+      } else if(p){
+        sel=C.selecaoInicial(b);
+        sel.itens=p.itens.map(function(i){return {id:i.servico,q:i.quantidade}});
+        var porte=b.portes.find(function(x){return x.nome.toLowerCase()===String(p.porte||'').toLowerCase()});
+        var tinta=b.tintas.find(function(x){return x.nome.toLowerCase()===String(p.tipo_pintura||'').toLowerCase()});
+        if(porte) sel.porte=porte.id;
+        if(tinta) sel.tinta=tinta.id; else avisosPedido.push('O cliente não disse o tipo de pintura: a conta está como sólida. Confira pelas fotos.');
+        sel=C.normalizar(b, sel);
+      } else {
+        sel=selAvulsa||C.selecaoInicial(b);
+      }
+      if(p && p.tem_amassado) avisosPedido.push('O cliente disse que tem amassado: coloque o valor da funilaria do parceiro.');
+
+      var marcados={}; sel.itens.forEach(function(i){marcados[i.id]=i.q});
+      var html=(p?'<a class="link voltar" href="#/p/'+esc(p.numero)+'">← Pedido '+esc(p.numero)+'</a>'+
+          '<div class="cab"><h1>Orçamento</h1><div class="meta"><span>'+esc(p.cliente)+'</span><span>'+esc(p.veiculo)+'</span>'+(p.cor?'<span>'+esc(p.cor)+'</span>':'')+'</div></div>'
+        : '<div class="titulo"><h1>Calculadora</h1><button class="link" type="button" id="limpar">Limpar</button></div>'+
+          '<p class="dica">Para calcular qualquer serviço, mesmo fora de um pedido. Nada aqui é salvo: copie a mensagem se precisar.</p>')+
+        avisosPedido.map(function(t){return '<p class="alerta">'+esc(t)+'</p>'}).join('')+
+        '<div class="layout calc"><div class="coluna">'+
+          '<section class="bloco" id="c-svc"><h2>Serviços</h2><div class="svcs">'+
+            b.servicos.map(function(s){
+              var q=marcados[s.id];
+              return '<label class="svc" id="crow-'+s.id+'"><span class="topo"><input type="checkbox" data-id="'+s.id+'"'+(q?' checked':'')+'>'+esc(s.nome)+'</span>'+
+                (s.max?'<span class="qtd">Quantas? <input type="number" id="cq-'+s.id+'" min="1" max="'+s.max+'" value="'+(q||1)+'" aria-label="Quantidade de '+esc(s.nome)+'"></span>':'')+'</label>';
+            }).join('')+'</div></section>'+
+          '<section class="bloco"><h2>Carro</h2>'+
+            '<div class="campo"><span class="rotulo">Tipo</span><div class="chips">'+b.portes.map(function(x){return '<label class="chip"><input type="radio" name="c-porte" value="'+x.id+'"'+(x.id===sel.porte?' checked':'')+'><span>'+esc(x.nome)+'</span></label>'}).join('')+'</div></div>'+
+            '<div class="campo"><span class="rotulo">Pintura</span><div class="chips">'+b.tintas.map(function(x){return '<label class="chip"><input type="radio" name="c-tinta" value="'+x.id+'"'+(x.id===sel.tinta?' checked':'')+'><span>'+esc(x.nome)+'</span></label>'}).join('')+'</div></div>'+
+          '</section>'+
+          '<section class="bloco"><h2>Desconto e funilaria</h2><div class="duas">'+
+            '<div class="campo"><label for="c-desc">Desconto loja (%)</label><input type="number" id="c-desc" min="0" max="30" step="1" inputmode="numeric" value="'+sel.desc+'"></div>'+
+            '<div class="campo"><label for="c-fun">Funilaria do parceiro (R$)</label><input type="number" id="c-fun" min="0" step="10" inputmode="numeric" value="'+sel.fun+'"></div>'+
+          '</div></section>'+
+          '<details class="bloco"><summary>Custos deste cálculo</summary>'+
+            '<div class="tres">'+
+              '<div class="campo"><label for="c-hora">Hora (R$)</label><input type="number" id="c-hora" min="0" step="5" inputmode="decimal" value="'+sel.hora+'"></div>'+
+              '<div class="campo"><label for="c-dia">Horas/dia</label><input type="number" id="c-dia" min="1" max="14" step="1" inputmode="numeric" value="'+sel.horas_dia+'"></div>'+
+              '<div class="campo"><label for="c-res">Reserva (%)</label><input type="number" id="c-res" min="0" max="60" step="1" inputmode="numeric" value="'+sel.reserva+'"></div>'+
+            '</div>'+
+            '<label class="marcar"><input type="checkbox" id="c-troca"'+(sel.troca?' checked':'')+'><span>Contar a troca da oficina B (cada dia usado custa um dia de trabalho para o dono)</span></label>'+
+            '<p class="dica">Valem só para este cálculo. Para mudar de vez, use a tela <a href="#/precos">Preços</a>.</p>'+
+          '</details>'+
+        '</div><div class="coluna"><section class="bloco resultado" id="resultado" aria-live="polite"></section></div></div>';
+      app.innerHTML=html;
+
+      var r, msg, ultimoHtml='';
+      function ler(){
+        var itens=[];
+        b.servicos.forEach(function(s){
+          var c=app.querySelector('#c-svc input[data-id="'+s.id+'"]'); if(!c.checked) return;
+          var q=document.getElementById('cq-'+s.id); itens.push({id:s.id,q:q?+q.value:1});
+        });
+        var v=function(id){ return document.getElementById(id).value; };
+        return {itens:itens, porte:(app.querySelector('input[name=c-porte]:checked')||{}).value, tinta:(app.querySelector('input[name=c-tinta]:checked')||{}).value,
+          desc:v('c-desc')===''?0:+v('c-desc'), fun:v('c-fun')===''?0:+v('c-fun'), hora:v('c-hora')===''?b.hora:+v('c-hora'),
+          horas_dia:v('c-dia')===''?b.horas_dia:+v('c-dia'), reserva:v('c-res')===''?b.reserva:+v('c-res'), troca:document.getElementById('c-troca').checked};
+      }
+      // pintura completa trava as outras peças
+      function regras(){
+        var comp=b.servicos.find(function(s){return s.exclusivo});
+        var on=comp && app.querySelector('#c-svc input[data-id="'+comp.id+'"]').checked;
+        b.servicos.forEach(function(s){ if(s.exclusivo) return;
+          var c=app.querySelector('#c-svc input[data-id="'+s.id+'"]'); if(on&&c.checked) c.checked=false; c.disabled=on;
+          document.getElementById('crow-'+s.id).classList.toggle('off',!!on); });
+      }
+      function atualizar(){
+        regras();
+        r=C.calcular(b, ler()); if(!p) selAvulsa=r.sel;
+        msg=C.mensagem(r, p?{nome:p.cliente, veiculo:(p.veiculo||'').split(' · ')[0], numero:p.numero}:null);
+        var el=document.getElementById('resultado');
+        if(r.vazio){ el.innerHTML=ultimoHtml='<span class="rotulo">Preço sugerido</span><strong class="preco">R$ 0</strong><p class="dica">Marque pelo menos um serviço.</p>'; return; }
+        var k=r.k;
+        var partes=[
+          {n:'Material',v:k.material,c:'var(--muted)'},
+          {n:'Mão de obra ('+C.horasTxt(k.horas)+' h)',v:k.mao,c:'var(--cor)'},
+          {n:'Troca na oficina B',v:k.espaco,c:'var(--verniz)'},
+          {n:'Reserva',v:k.reserva,c:'var(--fita)'}];
+        if(r.sel.desc>0) partes.push({n:'Desconto loja',v:-r.desconto,c:'transparent'});
+        if(r.fun>0) partes.push({n:'Funilaria (repasse ao parceiro)',v:r.fun,c:'#7a4fb3'});
+        var tot=partes.reduce(function(a,x){return a+Math.max(0,x.v)},0)||1;
+        var h='<span class="rotulo">Preço sugerido</span><strong class="preco">'+brl(r.total)+'</strong><p class="dica">'+esc(C.resumo(r))+'</p>'+
+          '<div class="pilha" aria-hidden="true">'+partes.filter(function(x){return x.v>0}).map(function(x){return '<span style="width:'+(x.v/tot*100)+'%;background:'+x.c+'"></span>'}).join('')+'</div>'+
+          '<div class="legenda">'+partes.filter(function(x){return Math.round(x.v)!==0}).map(function(x){return '<i style="background:'+x.c+(x.c==='transparent'?';border:1px solid var(--line)':'')+'"></i><span>'+esc(x.n)+'</span><span class="v">'+(x.v<0?'− ':'')+brl(Math.abs(x.v))+'</span>'}).join('')+'</div>';
+        if(r.sugerirCompleta) h+='<div class="alerta"><span>'+(r.pintura>=r.sugerirCompleta.preco?'Essas peças já custam mais que a pintura completa':'Essas peças já somam '+r.sugerirCompleta.pct+'% da pintura completa')+' ('+brl(r.sugerirCompleta.preco)+'). Para o cliente, a pintura completa pode valer mais a pena, e a cor fica uniforme.</span><button class="btn claro" type="button" data-acao="completa">Trocar para pintura completa</button></div>';
+        if(r.sugerirEsmaecimento) h+='<div class="alerta"><span>Em cor '+esc(r.tinta.nome.toLowerCase())+', a peça vizinha costuma precisar de esmaecimento para a cor não ficar diferente.</span><button class="btn claro" type="button" data-acao="esmaecimento">Adicionar esmaecimento</button></div>';
+        if(r.abaixoDoCusto) h+='<div class="alerta ruim">Com '+r.sel.desc+'% de desconto, a pintura sai por '+brl(r.pintura)+', abaixo do custo de '+brl(k.base)+' (material, mão de obra e troca). Reduza o desconto.</div>';
+        if(r.mercado){
+          var m=r.mercado, a=m.lo*0.6, z=m.hi*1.2, pos=Math.max(0,Math.min(100,(m.preco-a)/(z-a)*100)), l=(m.lo-a)/(z-a)*100, d=(m.hi-a)/(z-a)*100;
+          h+='<div class="mercado"><span class="rotulo">Comparação com o mercado</span>'+
+            '<div class="trilho" style="background:linear-gradient(90deg,var(--line) '+l+'%,color-mix(in srgb,var(--ok) 50%,transparent) '+l+'%,color-mix(in srgb,var(--ok) 50%,transparent) '+d+'%,var(--line) '+d+'%)"><span class="pino" style="left:'+pos+'%">'+(r.fun>0?'Pintura':'Seu preço')+'</span></div>'+
+            '<div class="pontas"><span>Mercado: '+brl(m.lo)+(m.parcial?' (sem esmaecimento)':'')+'</span><span>até '+brl(m.hi)+'</span></div>'+
+            '<p class="veredito v-'+m.nivel+'">'+esc(m.texto)+'</p></div>';
+        }
+        h+='<div class="kpis"><div class="kpi"><b>'+brl(r.sobraHora)+'</b><span>sobra por hora de trabalho'+(r.sel.troca?', já contando a troca':'')+'</span></div>'+
+          '<div class="kpi"><b>'+r.semanas+'</b><span>'+(r.semanas>1?'fins de semana':'fim de semana')+' para entregar'+(r.sel.troca?'. Depois, '+r.diasTroca+(r.diasTroca>1?' dias':' dia')+' de troca com o dono da oficina B':'')+'</span></div></div>'+
+          '<div class="campo"><span class="rotulo">Mensagem para o cliente</span><pre class="msg">'+esc(msg)+'</pre></div>'+
+          '<div class="botoes">'+
+            (p?'<button class="btn primario" type="button" id="c-salvar">Salvar no pedido</button>'+(p.telefone?'<button class="btn wpp" type="button" id="c-enviar">Salvar e enviar no WhatsApp</button>':''):'')+
+            '<button class="btn claro" type="button" id="c-copiar">Copiar mensagem</button></div>'+
+          (p&&!p.telefone?'<p class="dica">Sem telefone no pedido: copie a mensagem e mande na conversa do cliente.</p>':'');
+        // Só redesenha se mudou: o "change" de um campo dispara quando a pessoa toca no botão,
+        // e redesenhar naquela hora trocaria o botão embaixo do dedo e o toque se perderia.
+        if(h!==ultimoHtml){ el.innerHTML=h; ultimoHtml=h; }
+      }
+      app.querySelector('.layout').addEventListener('input',atualizar);
+      app.querySelector('.layout').addEventListener('change',atualizar);
+      document.getElementById('resultado').addEventListener('click',function(ev){
+        var t=ev.target.closest('button'); if(!t) return;
+        if(t.dataset.acao==='completa'){ var comp=b.servicos.find(function(s){return s.exclusivo}); app.querySelector('#c-svc input[data-id="'+comp.id+'"]').checked=true; atualizar(); }
+        else if(t.dataset.acao==='esmaecimento'){ app.querySelector('#c-svc input[data-id="esmaecimento"]').checked=true; atualizar(); }
+        else if(t.id==='c-copiar') copiar(msg);
+        else if(t.id==='c-salvar') salvar(false, t);
+        else if(t.id==='c-enviar') salvar(true, t);
+      });
+      var limpar=document.getElementById('limpar');
+      if(limpar) limpar.addEventListener('click',function(){ selAvulsa=null; telaCalc(null); });
+
+      function salvar(enviar, botao){
+        if(r.vazio){ aviso('Marque pelo menos um serviço.', true); return; }
+        // a aba do WhatsApp precisa abrir já no clique, senão o navegador bloqueia
+        var janela=enviar?window.open('','_blank'):null;
+        botao.disabled=true;
+        api('PUT','/painel/pedidos/'+encodeURIComponent(p.numero)+'/orcamento',{
+          calculo:C.foto(r,msg,cb.atualizado_em), valor_orcado_centavos:Math.round(r.total*100), sinal_centavos:Math.round(r.sinal*100)
+        }).then(function(){
+          aviso('Orçamento salvo no pedido');
+          if(janela){ if(!janela.closed) janela.location.href=linkWhats(p.telefone,msg); else location.href=linkWhats(p.telefone,msg); }
+          location.hash='#/p/'+p.numero;
+        }).catch(function(e){ if(janela&&!janela.closed) janela.close(); botao.disabled=false; falhou(e); });
+      }
+      atualizar();
+    }).catch(function(e){
+      if(e && e.status===404){ app.innerHTML='<a class="link voltar" href="#/">← Pedidos</a><div class="vazio"><b>Pedido não encontrado.</b></div>'; return; }
+      falhou(e);
+    });
+  }
+
+  /* ---------- preços (bases da calculadora) ---------- */
+  function telaPrecos(){
+    document.getElementById('sair').hidden=false;
+    marcarAba('precos');
+    app.innerHTML='<p class="carregando">Carregando preços…</p>';
+    carregarBases().then(function(cb){ desenharPrecos(cb, cb.bases); }).catch(falhou);
+  }
+  function pctFator(f){ return Math.round((f-1)*100); }
+  function desenharPrecos(cb, b){
+    var pd=cb.padrao;
+    var padraoDe=function(id){ return pd.servicos.find(function(s){return s.id===id}); };
+    var fatorPadrao=function(lista,id){ return (lista.find(function(x){return x.id===id})||{}).fator; };
+    function campo(id, rotulo, valor, padrao, extra){
+      return '<div class="campo"><label for="'+id+'">'+rotulo+'</label><input type="number" id="'+id+'" step="any" inputmode="decimal" value="'+valor+'" data-padrao="'+padrao+'"'+(extra||'')+'>'+
+        '<span class="padrao" hidden>Padrão: '+String(padrao).replace('.',',')+'</span><p class="erro" id="e-'+id+'" hidden></p></div>';
+    }
+    var html='<div class="titulo"><h1>Preços</h1></div>'+
+      '<p class="dica">A base da calculadora. Mudou aqui, vale para todos os cálculos novos. Orçamentos já salvos nos pedidos não mudam. '+
+        (cb.atualizado_em?'Última alteração: '+esc(dataHora(cb.atualizado_em))+'.':'Usando os valores iniciais.')+'</p>'+
+      '<form class="coluna" id="f-precos" novalidate>'+
+      '<section class="bloco"><h2>Custos do Ricardo</h2><div class="tres">'+
+        campo('p-hora','Valor da hora (R$)',b.hora,pd.hora)+campo('p-dia','Horas por dia',b.horas_dia,pd.horas_dia)+campo('p-res','Reserva (%)',b.reserva,pd.reserva)+
+      '</div>'+
+      '<label class="marcar"><input type="checkbox" id="p-troca"'+(b.troca?' checked':'')+'><span>Contar a troca da oficina B nos cálculos (cada dia usado custa um dia de trabalho para o dono)</span></label>'+
+      '<p class="dica">Reserva cobre imprevistos: retrabalho, material extra, ferramenta que quebra.</p></section>'+
+      '<section class="bloco"><h2>Serviços</h2><p class="dica">Material e horas para um <b>hatch com tinta sólida</b>. Carros maiores e tintas especiais aumentam a partir daqui (veja abaixo). O mercado é a faixa de preço (R$) cobrada em São Paulo.</p>'+
+        '<div class="precos">'+b.servicos.map(function(s){
+          var d=padraoDe(s.id);
+          return '<fieldset class="preco-svc"><legend>'+esc(s.nome)+'</legend><div class="duas">'+
+            campo('m-'+s.id,'Material (R$)',s.material,d.material)+campo('h-'+s.id,'Horas',s.horas,d.horas)+
+            (s.mercado_min!=null?campo('lo-'+s.id,'Mercado: de',s.mercado_min,d.mercado_min)+campo('hi-'+s.id,'até',s.mercado_max,d.mercado_max):'<p class="dica" style="grid-column:1/-1">Sem referência de mercado.</p>')+
+            '</div><p class="erro" id="e-mercado-'+s.id+'" hidden></p></fieldset>';
+        }).join('')+'</div></section>'+
+      '<section class="bloco"><h2>Porte e tinta</h2><p class="dica">Quanto a mais de material e de horas, em %. Hatch e tinta sólida são a base.</p>'+
+        '<div class="tres">'+b.portes.slice(1).map(function(x){return campo('f-'+x.id,x.nome+' (+%)',pctFator(x.fator),pctFator(fatorPadrao(pd.portes,x.id)))}).join('')+'</div>'+
+        '<div class="duas">'+b.tintas.slice(1).map(function(x){return campo('f-'+x.id,x.nome+' (+%)',pctFator(x.fator),pctFator(fatorPadrao(pd.tintas,x.id)))}).join('')+'</div>'+
+      '</section>'+
+      '<section class="bloco"><h2>Sugestão de pintura completa</h2><div class="duas">'+
+        campo('p-sug','Sugerir a partir de (% do preço da completa)',b.sugerir_completa,pd.sugerir_completa)+
+      '</div><p class="dica">Quando as peças marcadas somarem esse tanto do preço da pintura completa, a calculadora sugere trocar.</p></section>'+
+      '<p class="erro" id="e-geral" role="alert" hidden></p>'+
+      '<div class="barra-salvar"><span class="dica" id="sujo" hidden>Alterações não salvas</span>'+
+        '<button class="btn claro" type="button" id="p-padrao">Voltar aos valores iniciais</button>'+
+        '<button class="btn primario" type="submit" id="p-salvar">Salvar preços</button></div>'+
+      '</form>';
+    app.innerHTML=html;
+    var f=document.getElementById('f-precos');
+    function marcarPadrao(){
+      f.querySelectorAll('input[data-padrao]').forEach(function(i){
+        var dif=i.value!=='' && +i.value!==+i.dataset.padrao; i.parentNode.querySelector('.padrao').hidden=!dif; i.classList.toggle('mudado',dif);
+      });
+    }
+    marcarPadrao();
+    f.addEventListener('input',function(){ document.getElementById('sujo').hidden=false; marcarPadrao(); });
+    f.addEventListener('change',function(){ document.getElementById('sujo').hidden=false; });
+    document.getElementById('p-padrao').addEventListener('click',function(){
+      desenharPrecos(cb, JSON.parse(JSON.stringify(pd)));
+      document.getElementById('sujo').hidden=false; aviso('Valores iniciais colocados. Salve para valer.');
+    });
+    f.addEventListener('submit',function(ev){
+      ev.preventDefault();
+      var erros={}, n=function(id){ var v=document.getElementById(id).value; if(v===''||!isFinite(+v)){ erros[id]='Preencha com um número.'; return 0; } return +v; };
+      var nova={hora:n('p-hora'), horas_dia:n('p-dia'), reserva:n('p-res'), troca:document.getElementById('p-troca').checked, sugerir_completa:n('p-sug'),
+        servicos:b.servicos.map(function(s){
+          var x={id:s.id, material:n('m-'+s.id), horas:n('h-'+s.id), mercado_min:null, mercado_max:null};
+          if(s.mercado_min!=null){ x.mercado_min=n('lo-'+s.id); x.mercado_max=n('hi-'+s.id); }
+          return x; }),
+        portes:b.portes.map(function(x,i){ return {id:x.id, fator:i===0?1:1+n('f-'+x.id)/100}; }),
+        tintas:b.tintas.map(function(x,i){ return {id:x.id, fator:i===0?1:1+n('f-'+x.id)/100}; })};
+      if(mostrarErros(erros)) return;
+      var bt=document.getElementById('p-salvar'); bt.disabled=true; bt.textContent='Salvando…';
+      api('PUT','/painel/calculadora',nova).then(function(resp){
+        basesCache=Promise.resolve(resp); aviso('Preços salvos'); desenharPrecos(resp, resp.bases);
+        // a calculadora avulsa passa a usar os custos novos (mantém os serviços marcados)
+        if(selAvulsa){ selAvulsa.hora=resp.bases.hora; selAvulsa.horas_dia=resp.bases.horas_dia; selAvulsa.reserva=resp.bases.reserva; selAvulsa.troca=resp.bases.troca; }
+      }).catch(function(e){
+        bt.disabled=false; bt.textContent='Salvar preços';
+        if(e&&e.erros){ // nomes do servidor -> campos da tela
+          var m={hora:'p-hora',horas_dia:'p-dia',reserva:'p-res',sugerir_completa:'p-sug'}, x={};
+          Object.keys(e.erros).forEach(function(k){
+            var id=m[k]||k.replace(/^material_/,'m-').replace(/^horas_/,'h-').replace(/^fator_/,'f-').replace(/^mercado_/,'mercado-');
+            x[id]=e.erros[k]; });
+          mostrarErros(x);
+        } else falhou(e);
+      });
+    });
+    function mostrarErros(erros){
+      f.querySelectorAll('.erro').forEach(function(el){ el.hidden=true; });
+      f.querySelectorAll('.invalido').forEach(function(el){ el.classList.remove('invalido'); });
+      Object.keys(erros).forEach(function(id){
+        var el=document.getElementById('e-'+id), inp=document.getElementById(id);
+        if(el){ el.textContent=erros[id]; el.hidden=false; } if(inp) inp.classList.add('invalido');
+      });
+      var tem=Object.keys(erros).length, g=document.getElementById('e-geral'); g.hidden=!tem; g.textContent='Confira os campos marcados.';
+      if(tem){ var pr=f.querySelector('.erro:not([hidden])'); if(pr) pr.scrollIntoView({block:'center'}); }
+      return tem;
+    }
+  }
+
   /* ---------- rotas ---------- */
   function rota(){
     var h=location.hash||'#/';
     var m=h.match(/^#\/p\/([A-Za-z0-9-]+)$/);
     if(m) return telaPedido(m[1].toUpperCase());
     if(h==='#/novo') return telaNovo();
+    var c=h.match(/^#\/calc(?:\/([A-Za-z0-9-]+))?$/);
+    if(c) return telaCalc(c[1]?c[1].toUpperCase():null);
+    if(h==='#/precos') return telaPrecos();
     return telaLista();
   }
   window.addEventListener('hashchange',rota);

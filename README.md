@@ -45,7 +45,8 @@ cmd/server/          ponto de entrada
 internal/config/     variáveis de ambiente
 internal/banco/      conexão e migrações (SQL embutido no binário)
 internal/pedidos/    regras, repositório, rotas e testes
+internal/calculadora/ bases da calculadora (valores iniciais, validação, rotas)
 internal/sessao/     login do painel (cookie assinado)
 internal/servidor/   roteador, CORS, limite por IP
-painel/              telas do painel da atendente (servidas pelo Go em /painel/)
+painel/              telas do painel: pedidos, calculadora e preços (servidas pelo Go em /painel/)
 ```

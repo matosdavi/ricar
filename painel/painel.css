@@ -136,7 +136,8 @@ textarea{min-height:80px;resize:vertical}
 /* novo pedido: serviços */
 .svcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .svc{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);background:var(--bg);padding:10px 12px;border-radius:4px;cursor:pointer}
-.svc .topo{display:flex;gap:8px;align-items:center;font-weight:700}
+.svc .topo{display:flex;gap:8px;align-items:flex-start;font-weight:700}
+.svc .topo input{margin-top:1px!important;flex:none}
 .svc input[type=checkbox]{width:20px;height:20px;accent-color:var(--cor);margin:0}
 .svc:has(input[type=checkbox]:checked){border-color:var(--cor);box-shadow:inset 0 0 0 1px var(--cor);background:color-mix(in srgb,var(--cor) 8%,var(--surface))}
 .svc.off{opacity:.5}
@@ -154,3 +155,56 @@ textarea{min-height:80px;resize:vertical}
   background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:4px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.25);max-width:calc(100% - 32px)}
 .toast.ruim{background:var(--cor);color:var(--cor-fg)}
 .campo .link{align-self:flex-start}
+
+/* abas do topo: no celular descem para uma segunda linha */
+.barra{flex-wrap:wrap}
+.abas{display:flex;gap:4px;order:3;flex-basis:100%;overflow-x:auto;scrollbar-width:none}
+.abas a{color:inherit;text-decoration:none;font-weight:700;padding:8px 12px;border-radius:4px;opacity:.75;white-space:nowrap}
+.abas a[aria-current=page]{opacity:1;background:color-mix(in srgb,var(--bg) 18%,transparent)}
+@media (min-width:640px){.abas{order:0;flex-basis:auto;margin-right:auto;margin-left:16px}}
+
+/* campos extras */
+.tres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+@media (max-width:420px){.tres{grid-template-columns:1fr 1fr}}
+.marcar{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.marcar input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--cor);flex:none}
+details.bloco>summary{font-family:var(--display);font-weight:800;font-size:1.25rem;text-transform:uppercase;cursor:pointer}
+details.bloco:not([open]){gap:0}
+.alerta{border-left:4px solid var(--verniz);background:color-mix(in srgb,var(--verniz) 12%,transparent);padding:10px 12px;font-size:.93rem;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.alerta.ruim{border-color:var(--alerta);background:color-mix(in srgb,var(--alerta) 14%,transparent)}
+.alerta .btn{min-height:40px;padding:6px 12px}
+
+/* calculadora: resultado fica parado ao rolar no PC */
+@media (min-width:860px){.calc .resultado{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px)}}
+.rotulo{font-weight:700;font-size:.95rem}
+.preco{font-family:var(--display);font-weight:800;font-size:clamp(2.6rem,9vw,3.4rem);line-height:1;color:var(--cor);font-variant-numeric:tabular-nums}
+.pilha{display:flex;height:20px;border-radius:3px;overflow:hidden;background:var(--line)}
+.pilha span{display:block;height:100%}
+.legenda{display:grid;grid-template-columns:14px 1fr auto;gap:6px 10px;align-items:center;font-size:.95rem;font-variant-numeric:tabular-nums}
+.legenda i{width:12px;height:12px;border-radius:2px;display:block}
+.legenda .v{text-align:right}
+.mercado{display:flex;flex-direction:column;gap:6px}
+.trilho{position:relative;height:10px;border-radius:5px;margin-top:24px}
+.pino{position:absolute;top:-24px;transform:translateX(-50%);font-family:var(--display);font-weight:600;font-size:.85rem;color:var(--cor);white-space:nowrap}
+.pino::after{content:"";position:absolute;left:50%;top:18px;width:3px;height:16px;background:var(--cor);transform:translateX(-50%);border-radius:2px}
+.pontas{display:flex;justify-content:space-between;gap:8px;font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.veredito{font-weight:700}
+.v-ok{color:var(--ok)} .v-alto{color:var(--alerta)} .v-baixo{color:var(--cor)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{border-top:3px solid var(--fg);padding-top:6px;display:flex;flex-direction:column;gap:2px}
+.kpi b{font-family:var(--display);font-size:1.7rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:.85rem;color:var(--muted)}
+.msg{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font:inherit;font-size:.93rem;background:var(--bg);border:1px dashed var(--line);padding:12px}
+.orc{display:flex;flex-direction:column;gap:4px}
+.orc .preco{font-size:2.4rem}
+
+/* preços */
+.precos{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.preco-svc{border:1px solid var(--line);background:var(--bg);padding:10px 12px 12px;margin:0;min-width:0;display:flex;flex-direction:column;gap:8px}
+.preco-svc legend{font-weight:700;padding:0 4px}
+.preco-svc input{background:var(--surface)}
+.padrao{font-size:.8rem;color:var(--muted)}
+input.mudado{border-color:var(--verniz);box-shadow:inset 3px 0 0 var(--verniz)}
+.barra-salvar{position:sticky;bottom:0;z-index:4;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;
+  background:var(--bg);border-top:1px solid var(--line);padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px))}
+.barra-salvar .dica{margin-right:auto;color:var(--alerta);font-weight:700}

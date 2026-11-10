@@ -71,8 +71,9 @@ func (r *repoFalso) Criar(_ context.Context, p NovoPedido) (Criado, error) {
 	r.criados = append(r.criados, p)
 	return Criado{Numero: "BP-00001", CriadoEm: hoje}, nil
 }
-func (r *repoFalso) Listar(context.Context, Filtro) ([]Resumo, error) { return []Resumo{}, nil }
-func (r *repoFalso) Atualizar(context.Context, string, Dados) error   { return nil }
+func (r *repoFalso) Listar(context.Context, Filtro) ([]Resumo, error)         { return []Resumo{}, nil }
+func (r *repoFalso) Atualizar(context.Context, string, Dados) error           { return nil }
+func (r *repoFalso) SalvarOrcamento(context.Context, string, Orcamento) error { return nil }
 func (r *repoFalso) Buscar(context.Context, string) (Detalhe, error) {
 	return Detalhe{}, ErrNaoEncontrado
 }
@@ -163,5 +164,29 @@ func TestValidarDados(t *testing.T) {
 	d = Dados{DataAgendada: &vazia, Telefone: "11 99999-8888"}
 	if e := d.Validar(); e != nil || d.DataAgendada != nil || d.Telefone != "11999998888" {
 		t.Fatalf("data vazia deveria virar nil e telefone só dígitos: %v %+v", e, d)
+	}
+}
+
+func TestValidarOrcamento(t *testing.T) {
+	ok := Orcamento{Calculo: json.RawMessage(`{"total":850}`), Valor: 85000, Sinal: 42500}
+	if e := ok.Validar(); e != nil {
+		t.Fatalf("orçamento certo deu erro: %v", e)
+	}
+	casos := map[string]Orcamento{
+		"valor zero":         {Calculo: ok.Calculo, Valor: 0},
+		"sinal maior":        {Calculo: ok.Calculo, Valor: 100, Sinal: 200},
+		"cálculo vazio":      {Valor: 100},
+		"cálculo não objeto": {Calculo: json.RawMessage(`[1,2]`), Valor: 100},
+	}
+	for nome, o := range casos {
+		if o.Validar() == nil {
+			t.Errorf("%s: deveria dar erro", nome)
+		}
+	}
+	if got := reaisTexto(125050); got != "R$ 1.250,50" {
+		t.Errorf("reaisTexto = %q", got)
+	}
+	if got := reaisTexto(85000); got != "R$ 850" {
+		t.Errorf("reaisTexto = %q", got)
 	}
 }

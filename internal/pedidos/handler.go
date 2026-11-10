@@ -155,3 +155,28 @@ func (h *Handler) MudarStatus(c *gin.Context) {
 	}
 	c.Status(http.StatusNoContent)
 }
+
+// SalvarOrcamento guarda o cálculo da calculadora no pedido. PUT /api/painel/pedidos/:numero/orcamento
+func (h *Handler) SalvarOrcamento(c *gin.Context) {
+	var o Orcamento
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 32<<10)
+	if err := c.ShouldBindJSON(&o); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"erro": "Não conseguimos ler o orçamento."})
+		return
+	}
+	if erros := o.Validar(); erros != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"erro": "O orçamento precisa de ajuste.", "erros": erros})
+		return
+	}
+	err := h.Repo.SalvarOrcamento(c.Request.Context(), strings.ToUpper(c.Param("numero")), o)
+	if errors.Is(err, ErrNaoEncontrado) {
+		c.JSON(http.StatusNotFound, gin.H{"erro": "Pedido não encontrado."})
+		return
+	}
+	if err != nil {
+		slog.Error("salvar orçamento", "erro", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"erro": "Não conseguimos salvar o orçamento."})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
