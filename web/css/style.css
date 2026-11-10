@@ -104,7 +104,11 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex
 .how{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:h;list-style:none;margin:0;padding:0}
 .how li{counter-increment:h;border-top:3px solid var(--fg);padding-top:8px;display:flex;flex-direction:column;gap:2px}
 .how li::before{content:counter(h);font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--cor);line-height:1}
-footer{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+footer{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:12px}
+.social{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;min-height:44px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;
+  color:var(--fg);text-decoration:none;font-size:.95rem;background:var(--surface)}
+.social:hover{border-color:currentColor}
+.social svg{flex:none;color:var(--cor, currentColor)}
 /* fotos que o cliente manda */
 .shots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 @media (max-width:420px){.shots{grid-template-columns:1fr}}
