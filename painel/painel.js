@@ -103,10 +103,15 @@
     document.getElementById('sair').hidden=false;
     app.innerHTML='<p class="carregando">Carregando pedidos…</p>';
     var fechado = filtro==='finalizado'||filtro==='cancelado';
-    api('GET', fechado ? '/painel/pedidos?status='+filtro+'&limite=100' : '/painel/pedidos?abertos=1').then(function(r){
-      var lista=r.pedidos||[];
-      var cont={}; if(!fechado) lista.forEach(function(p){cont[p.status]=(cont[p.status]||0)+1});
-      var chips=[{id:'todos',nome:'Todos',n:fechado?null:lista.length}].concat(ABERTAS.map(function(e){return {id:e.id,nome:e.nome,n:fechado?null:(cont[e.id]||0)}}))
+    // Os números das etapas abertas vêm sempre da lista de abertos; vendo Finalizados/Cancelados,
+    // buscamos as duas listas ao mesmo tempo para os números não sumirem.
+    var pedidos=[api('GET','/painel/pedidos?abertos=1')];
+    if(fechado) pedidos.push(api('GET','/painel/pedidos?status='+filtro+'&limite=100'));
+    Promise.all(pedidos).then(function(rs){
+      var abertos=rs[0].pedidos||[];
+      var lista=fechado ? (rs[1].pedidos||[]) : abertos;
+      var cont={}; abertos.forEach(function(p){cont[p.status]=(cont[p.status]||0)+1});
+      var chips=[{id:'todos',nome:'Todos',n:abertos.length}].concat(ABERTAS.map(function(e){return {id:e.id,nome:e.nome,n:cont[e.id]||0}}))
         .concat([{id:'finalizado',nome:'Finalizados'},{id:'cancelado',nome:'Cancelados'}]);
 
       var html='<div class="titulo"><h1>Pedidos</h1><a class="link" href="#/novo">+ Novo pedido</a></div>'+
