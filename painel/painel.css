@@ -71,6 +71,8 @@ textarea{min-height:80px;resize:vertical}
 /* chips de etapa */
 .etapas{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));scrollbar-width:none}
 .etapas::-webkit-scrollbar{display:none}
+/* No computador as etapas quebram em mais de uma linha (com mouse não dá para arrastar para o lado). */
+@media (min-width:700px){.etapas{flex-wrap:wrap;overflow-x:visible;margin-inline:0;padding-inline:0}}
 .etapa{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;font-weight:600;white-space:nowrap}
 .etapa .n{font-variant-numeric:tabular-nums;background:var(--bg);border-radius:999px;padding:0 8px;font-size:.85rem}
 .etapa[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
