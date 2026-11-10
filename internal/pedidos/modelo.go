@@ -74,9 +74,10 @@ type NovoPedido struct {
 	Nome         string `json:"nome"`
 	CidadeBairro string `json:"cidade_bairro"`
 	Origem       string `json:"origem"`
-	Telefone     string `json:"telefone"` // só no painel: o site não pede telefone
-	Site         string `json:"site"`     // armadilha para robôs: campo escondido, pessoa nunca preenche
-	ViaPainel    bool   `json:"-"`        // "-": nunca vem do JSON, só o servidor marca
+	Telefone     string `json:"telefone"`   // só no painel: o site não pede telefone
+	Referencia   string `json:"referencia"` // código que o site mostrou no recibo
+	Site         string `json:"site"`       // armadilha para robôs: campo escondido, pessoa nunca preenche
+	ViaPainel    bool   `json:"-"`          // "-": nunca vem do JSON, só o servidor marca
 }
 
 // ErrosValidacao guarda um erro por campo, no mesmo formato que o site mostra.
@@ -103,6 +104,7 @@ func (p *NovoPedido) Normalizar() {
 	p.Nome = limpa(p.Nome, 60)
 	p.CidadeBairro = limpa(p.CidadeBairro, 60)
 	p.Origem = limpa(p.Origem, 40)
+	p.Referencia = limpa(p.Referencia, 20)
 	p.Telefone = SoDigitos(p.Telefone)
 }
 
@@ -219,6 +221,7 @@ type Resumo struct {
 	CriadoEm     time.Time `json:"criado_em"`
 	AtualizadoEm time.Time `json:"atualizado_em"` // para mostrar "parado há 3 dias"
 	DataAgendada *string   `json:"data_agendada,omitempty"`
+	Referencia   string    `json:"referencia,omitempty"`
 }
 
 // Filtro da lista do painel. Abertos = tudo menos finalizado e cancelado.

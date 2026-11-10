@@ -54,7 +54,7 @@ func rodar() error {
 	handler := pedidos.NovoHandler(pedidos.NovoRepoPG(pool))
 	srv := &http.Server{
 		Addr:              ":" + cfg.Porta,
-		Handler:           servidor.Novo(cfg, handler),
+		Handler:           servidor.Novo(cfg, handler, pool.Ping),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 

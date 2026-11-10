@@ -63,11 +63,11 @@ func (r *RepoPG) Criar(ctx context.Context, p NovoPedido) (Criado, error) {
 		var pedidoID int64
 		if err := tx.QueryRow(ctx, `
 			INSERT INTO pedidos (cliente_id, veiculo_modelo, veiculo_ano, veiculo_porte, veiculo_cor,
-			                     tipo_pintura, tem_amassado, observacao, preferencia_data)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			                     tipo_pintura, tem_amassado, observacao, preferencia_data, referencia)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			RETURNING id, numero, criado_em`,
 			clienteID, p.Modelo, ano, p.Porte, vazioParaNil(p.Cor), vazioParaNil(p.TipoPintura),
-			p.TemAmassado, vazioParaNil(p.Observacao), vazioParaNil(p.Preferencia),
+			p.TemAmassado, vazioParaNil(p.Observacao), vazioParaNil(p.Preferencia), vazioParaNil(p.Referencia),
 		).Scan(&pedidoID, &out.Numero, &out.CriadoEm); err != nil {
 			return err
 		}
@@ -92,10 +92,10 @@ func (r *RepoPG) Criar(ctx context.Context, p NovoPedido) (Criado, error) {
 const colunasResumo = `
 	p.id, p.numero, p.status::TEXT, c.nome, COALESCE(c.cidade_bairro, ''), COALESCE(c.telefone, ''),
 	p.veiculo_modelo || COALESCE(' ' || p.veiculo_ano, '') || ' · ' || p.veiculo_porte,
-	p.criado_em, p.atualizado_em, to_char(p.data_agendada, 'YYYY-MM-DD')`
+	p.criado_em, p.atualizado_em, to_char(p.data_agendada, 'YYYY-MM-DD'), COALESCE(p.referencia, '')`
 
 func scanResumo(id *int64, s *Resumo) []any {
-	return []any{id, &s.Numero, &s.Status, &s.Cliente, &s.CidadeBairro, &s.Telefone, &s.Veiculo, &s.CriadoEm, &s.AtualizadoEm, &s.DataAgendada}
+	return []any{id, &s.Numero, &s.Status, &s.Cliente, &s.CidadeBairro, &s.Telefone, &s.Veiculo, &s.CriadoEm, &s.AtualizadoEm, &s.DataAgendada, &s.Referencia}
 }
 
 // Listar traz os pedidos, os parados há mais tempo primeiro dentro de cada etapa.

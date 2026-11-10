@@ -7,6 +7,7 @@
 
   // número do pedido: dia+mês + 4 dígitos (vira sequencial quando houver servidor)
   var pedidoNo='BP'+pad(now.getDate())+pad(now.getMonth()+1)+'-'+String(Math.floor(1000+Math.random()*9000));
+  var referenciaLocal=pedidoNo; // vai junto para o servidor: liga o recibo ao pedido mesmo se o servidor demorar
   var quando=pad(now.getDate())+'/'+pad(now.getMonth()+1)+'/'+now.getFullYear()+' - '+pad(now.getHours())+':'+pad(now.getMinutes());
 
   // serviços
@@ -166,10 +167,11 @@
   function payload(d){
     return {itens:d.itens.map(function(i){return {servico:i.id,quantidade:i.q}}), tem_amassado:d.amassado,
       modelo:d.modelo, ano:d.ano, porte:d.porte, cor:d.cor, tipo_pintura:d.tinta, observacao:d.obs,
-      preferencia:d.data, nome:d.nome, cidade_bairro:d.bairro, origem:d.origem, site:$('site').value};
+      preferencia:d.data, nome:d.nome, cidade_bairro:d.bairro, origem:d.origem, referencia:referenciaLocal, site:$('site').value};
   }
   function registrar(d){
-    var ctrl=new AbortController(), timer=setTimeout(function(){ctrl.abort()},6000);
+    // espera no máximo 2 s: depois disso o celular pode bloquear a abertura do WhatsApp
+    var ctrl=new AbortController(), timer=setTimeout(function(){ctrl.abort()},2000);
     return fetch(CONFIG.api.replace(/\/$/,'')+'/api/pedidos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload(d)),signal:ctrl.signal})
       .then(function(res){ return res.json().catch(function(){return {}}).then(function(j){ return {status:res.status,json:j}; }); })
       .finally(function(){clearTimeout(timer)});
@@ -209,12 +211,12 @@
       $('next').hidden=false;
       if(!CONFIG.whatsapp){ $('status').textContent='Protótipo: o número do WhatsApp ainda não foi configurado. Use "Copiar pedido" para ver o texto.'; return; }
       $('status').textContent='Abrindo o WhatsApp…';
-      abrirWhats(window.open('','_blank'));
+      abrirWhats(COM_EMOJI ? null : window.open('','_blank'));
       return;
     }
 
     // A aba precisa ser aberta já no clique, senão o navegador bloqueia como pop-up.
-    var janela=CONFIG.whatsapp?window.open('','_blank'):null;
+    var janela=(CONFIG.whatsapp && !COM_EMOJI) ? window.open('','_blank') : null; // no celular abre o app direto, sem aba extra
     ocupado(true); $('status').textContent='';
     registrar(r.d).then(function(res){
       if(res.status===201 && res.json.numero){
@@ -242,5 +244,7 @@
 
   if(CONFIG.whatsapp){ $('proto').hidden=true; } else { $('copy').hidden=false; }
   $('f-regiao').textContent=CONFIG.regiao;
+  // acorda o servidor e o banco (plano grátis dorme) enquanto o cliente preenche o formulário
+  if(CONFIG.api){ try{ fetch(CONFIG.api.replace(/\/$/,'')+'/api/saude',{mode:'cors'}).catch(function(){}); }catch(e){} }
   render();
 })();

@@ -2,6 +2,7 @@
 package servidor
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"time"
@@ -13,13 +14,23 @@ import (
 	"github.com/matosdavi/ricar/internal/sessao"
 )
 
-func Novo(cfg config.Config, ped *pedidos.Handler) *gin.Engine {
+// ping confere o banco; o site chama /api/saude ao abrir para "acordar" o servidor e o banco
+// (no plano grátis os dois dormem), assim o pedido é registrado rápido na hora do envio.
+func Novo(cfg config.Config, ped *pedidos.Handler, ping func(context.Context) error) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery(), cors(cfg.Origens))
 	ses := sessao.Nova(cfg.PainelUsuario, cfg.PainelSenha, cfg.SessaoSegredo)
 
 	api := r.Group("/api")
-	api.GET("/saude", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"ok": true}) })
+	api.GET("/saude", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+		defer cancel()
+		if err := ping(ctx); err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"ok": false, "banco": false})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"ok": true, "banco": true})
+	})
 	api.POST("/pedidos", limitePorIP(10, time.Hour), ped.Criar)
 
 	// Login do painel: no máximo 10 tentativas a cada 15 minutos por IP.

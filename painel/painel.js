@@ -146,7 +146,7 @@
         '<a class="link voltar" href="#/">← Pedidos</a>'+
         '<div class="cab" data-s="'+esc(p.status)+'">'+
           '<h1>'+esc(p.cliente)+'</h1>'+
-          '<div class="meta"><span class="status">'+esc(et.nome)+'</span><span>'+esc(p.numero)+'</span><span>'+esc(haQuanto(p.atualizado_em))+' nesta etapa</span></div>'+
+          '<div class="meta"><span class="status">'+esc(et.nome)+'</span><span>'+esc(p.numero)+'</span>'+(p.referencia&&p.referencia!==p.numero?'<span>Recibo '+esc(p.referencia)+'</span>':'')+'<span>'+esc(haQuanto(p.atualizado_em))+' nesta etapa</span></div>'+
         '</div>'+
         '<div class="layout"><div class="coluna">'+
 
