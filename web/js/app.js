@@ -56,7 +56,7 @@
     var tinta=$('tinta');
     return {itens:itens, porte:porte?porte.value:'', tinta:tinta.value==='nao-sei'?'':tinta.selectedOptions[0].textContent.replace(/ \(.*\)/,''),
       modelo:$('modelo').value.trim(), ano:$('ano').value.trim(), cor:$('cor').value.trim(), obs:$('obs').value.trim().replace(/\s+/g,' '),
-      amassado:$('amassado').checked, data:data?data.value:'', nome:$('nome').value.trim(), bairro:$('bairro').value.trim(), origem:$('origem').value, fotos:$('fotos-ok').checked};
+      amassado:$('amassado').checked, data:data?data.value:'', nome:$('nome').value.trim(), bairro:$('bairro').value.trim(), origem:$('origem').value};
   }
 
   // Emojis: pelo api.whatsapp.com (e wa.me) eles chegam como "�".
@@ -111,7 +111,7 @@
     $('funilaria').hidden=!d.amassado;
     if(!d.itens.length && !d.modelo && !d.nome){ r.classList.add('vazio'); r.textContent='Seu pedido aparece aqui enquanto você preenche.'; }
     else { r.classList.remove('vazio'); r.textContent=t.replace(/\*/g,''); }
-    // o botão só fica liberado com tudo o que é obrigatório preenchido (inclusive o "Entendi" das fotos)
+    // o botão só fica liberado com tudo o que é obrigatório preenchido
     var pend=REGRAS.filter(function(r){return !r.ok(d)});
     var send=$('send'), pronto=!pend.length && (CONFIG.whatsapp || CONFIG.api);
     if(pronto){ send.removeAttribute('aria-disabled'); } else { send.setAttribute('aria-disabled','true'); }
@@ -126,17 +126,16 @@
     {id:'e-modelo',campo:'modelo',      nome:'Modelo do carro',  ok:function(d){return d.modelo.length>=2}},
     {id:'e-ano',  campo:'ano',          nome:'Ano (use 4 números)',              ok:function(d){if(!d.ano) return true; var n=+d.ano; return /^\d{4}$/.test(d.ano)&&n>=1950&&n<=anoMax}, msg:'Use 4 números, entre 1950 e '+anoMax+'. Ou deixe em branco.'},
     {id:'e-nome', campo:'nome',         nome:'Seu nome',         ok:function(d){return d.nome.length>=2}},
-    {id:'e-bairro',campo:'bairro',      nome:'Cidade e bairro',  ok:function(d){return d.bairro.length>=3}},
-    {id:'e-fotos',campo:'fotos-ok',     nome:'Confirmação das fotos', ok:function(d){return d.fotos}}
+    {id:'e-bairro',campo:'bairro',      nome:'Cidade e bairro',  ok:function(d){return d.bairro.length>=3}}
   ];
   function validar(d,focar){
     var erros=[];
     REGRAS.forEach(function(r){
       var ok=r.ok(d), el=$(r.id), campo=$(r.campo);
       el.hidden=ok; if(r.msg) el.textContent=r.msg;
-      var alvo=r.id==='e-svc'?$('fs-svc'):r.id==='e-fotos'?$('l-fotos'):campo;
+      var alvo=r.id==='e-svc'?$('fs-svc'):campo;
       alvo.classList.toggle('invalido',!ok);
-      if(campo && r.id!=='e-svc' && r.id!=='e-fotos') campo.setAttribute('aria-invalid',!ok);
+      if(campo && r.id!=='e-svc') campo.setAttribute('aria-invalid',!ok);
       if(!ok) erros.push(r);
     });
     var sm=$('summary');
@@ -248,6 +247,37 @@
   });
 
   if(CONFIG.whatsapp){ $('proto').hidden=true; } else { $('copy').hidden=false; }
+
+  /* Botões "Chamar no WhatsApp" (sem formulário): mensagem curta, só texto. No computador vai
+     direto ao WhatsApp Web; no celular, pelo api.whatsapp.com, que abre o app. */
+  function linkSimples(msg){
+    return (CELULAR?'https://api.whatsapp.com/send':'https://web.whatsapp.com/send')+'?phone='+CONFIG.whatsapp+'&text='+encodeURIComponent(msg);
+  }
+  if(CONFIG.whatsapp){
+    $('wpp-direto').href=linkSimples('Olá! Vim pelo site e quero fazer um orçamento.');
+    $('wpp-lojas').href=linkSimples('Olá! Tenho uma loja/frota e quero saber da condição especial.');
+    $('wpp-rodape').href=linkSimples('Olá! Vim pelo site.');
+  }
+
+  /* Cartões de "O que fazemos": marcam o serviço no formulário e levam até ele. */
+  document.querySelectorAll('.card [data-svc]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var c=$('s-'+b.dataset.svc);
+      if(c && !c.disabled){ c.checked=true; }
+      render();
+      $('pedido').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+      setTimeout(function(){ $('modelo').focus({preventScroll:true}); },400);
+    });
+  });
+
+  /* Foto do Barão e antes e depois: só aparecem quando existem (config.js). */
+  if(CONFIG.fotoSobre){ $('sobre-img').src=CONFIG.fotoSobre; $('sobre-foto').hidden=false; }
+  if(CONFIG.trabalhos && CONFIG.trabalhos.length){
+    $('slots').innerHTML=CONFIG.trabalhos.map(function(t){
+      return '<figure class="slot"><img src="'+t.antes+'" alt="Antes: '+t.legenda+'" loading="lazy"><img src="'+t.depois+'" alt="Depois: '+t.legenda+'" loading="lazy"><figcaption>'+t.legenda+'</figcaption></figure>';
+    }).join('');
+    $('trabalhos').hidden=false;
+  }
   $('f-regiao').textContent=CONFIG.regiao;
   // acorda o servidor e o banco (plano grátis dorme) enquanto o cliente preenche o formulário
   if(CONFIG.api){ try{ fetch(CONFIG.api.replace(/\/$/,'')+'/api/saude',{mode:'cors'}).catch(function(){}); }catch(e){} }

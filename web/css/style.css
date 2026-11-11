@@ -94,17 +94,74 @@ aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex
 .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);font-weight:600}
 .status{font-size:.88rem;color:var(--muted);min-height:1.2em}
 
-/* portfólio */
-.port{display:flex;flex-direction:column;gap:12px}
-.port h2{font-size:1.6rem;font-weight:800;text-transform:uppercase}
-.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
-.slot{aspect-ratio:4/3;max-width:100%;border:1px dashed var(--line);display:grid;grid-template-columns:1fr 1fr;overflow:hidden;background:var(--surface)}
-.slot div{display:grid;place-items:center;font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-size:.9rem}
-.slot div+div{border-left:1px dashed var(--line);background:color-mix(in srgb,var(--cor) 6%,transparent)}
-.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;counter-reset:h;list-style:none;margin:0;padding:0}
-.how li{counter-increment:h;border-top:3px solid var(--fg);padding-top:8px;display:flex;flex-direction:column;gap:2px}
+/* topo: chamada e botões */
+.sub{font-size:1.1rem;max-width:52ch}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.cta .btn{flex:1 1 220px;min-height:52px;font-size:1.05rem}
+.btn.primario{background:var(--cor);color:var(--cor-fg)}
+.horario{font-size:.92rem;color:var(--muted)}
+h2.sec,.servicos h2,.titulo-form h2,.sobre h2,.faq h2,.port h2{font-size:clamp(1.7rem,5vw,2.2rem);font-weight:800;text-transform:uppercase}
+.link{font:inherit;font-weight:700;color:var(--cor);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;align-self:flex-start;min-height:44px;display:inline-flex;align-items:center}
+
+/* o que fazemos */
+.servicos{display:flex;flex-direction:column;gap:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.card img{display:block;width:100%;aspect-ratio:16/10;object-fit:cover;background:#0A1F3D}
+.card>div{padding:12px 14px 4px;display:flex;flex-direction:column;gap:4px;flex:1}
+.card h3{font-size:1.35rem;font-weight:800;text-transform:uppercase}
+.card p{font-size:.95rem;color:var(--muted);flex:1}
+@media (max-width:520px){ /* no celular: imagem à esquerda, texto à direita, para a lista não ficar enorme */
+  .card{flex-direction:row}
+  .card img{width:38%;aspect-ratio:auto;flex:none}
+  .card>div{padding:10px 12px 2px}
+  .card h3{font-size:1.15rem}
+  .card p{font-size:.88rem}
+}
+
+/* como funciona: compacto */
+.how{display:grid;gap:10px 14px;counter-reset:h;list-style:none;margin:0;padding:0}
+.how li{counter-increment:h;border-top:3px solid var(--fg);padding-top:8px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .how li::before{content:counter(h);font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--cor);line-height:1}
-footer{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:12px}
+.how{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+@media (max-width:720px){.how{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+.how li{font-size:.95rem}
+.how li .muted{font-size:.88rem}
+.titulo-form{display:flex;flex-direction:column;gap:4px;scroll-margin-top:16px}
+.titulo-form:focus{outline:none}
+
+/* quem é o Barão */
+.sobre{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px;align-items:center;background:#0A1F3D;color:#E6F0FF;padding:28px 24px;border-radius:4px}
+.sobre:not(:has(.sobre-foto:not([hidden]))){grid-template-columns:1fr}
+@media (max-width:720px){.sobre{grid-template-columns:1fr}}
+.sobre-foto{margin:0}
+.sobre-foto img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:3px;display:block}
+.sobre-texto{display:flex;flex-direction:column;gap:12px;max-width:62ch}
+.sobre p{color:#C9D8EE;font-size:1.05rem}
+.kick{font-family:var(--display);font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#4C9AFF;font-size:.95rem}
+
+/* antes e depois (só aparece com fotos) */
+.port{display:flex;flex-direction:column;gap:12px}
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.slot{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--surface);border:1px solid var(--line)}
+.slot img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.slot figcaption{grid-column:1/-1;padding:8px 10px;font-size:.9rem;color:var(--muted)}
+
+/* perguntas frequentes */
+.faq{display:flex;flex-direction:column;gap:8px}
+.faq h2{margin-bottom:6px}
+.faq details{background:var(--surface);border:1px solid var(--line)}
+.faq summary{cursor:pointer;font-weight:700;padding:14px 44px 14px 16px;list-style:none;position:relative;min-height:48px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:16px;top:50%;transform:translateY(-50%);font-family:var(--display);font-weight:800;font-size:1.5rem;color:var(--cor)}
+.faq details[open] summary::after{content:"−"}
+.faq details p{padding:0 16px 16px;color:var(--muted)}
+.faq summary:focus-visible{outline:3px solid var(--fita);outline-offset:-3px}
+
+footer{font-size:.88rem;color:var(--muted);border-top:1px solid var(--line);padding-top:18px;display:flex;flex-direction:column;gap:12px}
+.rodape-info{display:flex;flex-direction:column;gap:2px}
+.rodape-info b{color:var(--fg)}
+.priv{font-size:.82rem}
 .social{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;min-height:44px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;
   color:var(--fg);text-decoration:none;font-size:.95rem;background:var(--surface)}
 .social:hover{border-color:currentColor}
@@ -138,3 +195,4 @@ fieldset.invalido{box-shadow:inset 3px 0 0 var(--cor)}
 .summary.neutro{border:1px dashed var(--line);background:var(--surface);color:var(--muted)}
 .summary.neutro b{color:var(--fg);font-weight:600}
 .btn.wpp[aria-disabled=true]{opacity:.85}
+@media (min-width:900px){.cards{grid-template-columns:repeat(5,minmax(0,1fr))}.card h3{font-size:1.2rem}}

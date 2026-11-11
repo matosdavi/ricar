@@ -16,6 +16,11 @@ window.CONFIG = {
     {id:'polimento',  nome:'Polimento completo'},
     {id:'completa',   nome:'Pintura completa',   exclusivo:true}
   ],
-  portes: ['Hatch','Sedan','SUV','Picape']
+  portes: ['Hatch','Sedan','SUV','Picape'],
+  // foto do Ricardo na seção "Quem é o Barão". Vazio = a seção aparece só com o texto. Ex.: 'img/barao.jpg'
+  fotoSobre: '',
+  // antes e depois: a seção só aparece quando tiver pelo menos um. Ex.:
+  // {antes:'img/trabalhos/1-antes.jpg', depois:'img/trabalhos/1-depois.jpg', legenda:'Para-choque de um Onix prata'}
+  trabalhos: []
 };
 /* =========================================================== */

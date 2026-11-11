@@ -3,39 +3,75 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Barão Pintura Automotiva · Orçamento</title>
+<title>Barão Pintura Automotiva · Embu das Artes e Taboão da Serra</title>
 <meta name="description" content="Pintura automotiva com mais de 40 anos de experiência em Embu das Artes, Taboão da Serra e região. Peça seu orçamento pelo WhatsApp.">
 <meta property="og:title" content="Barão Pintura Automotiva">
-<meta property="og:description" content="Peça seu orçamento em 2 minutos pelo WhatsApp.">
+<meta property="og:description" content="Mais de 40 anos de pintura automotiva. Peça seu orçamento em 2 minutos pelo WhatsApp, sem compromisso.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://matosdavi.github.io/ricar/">
+<meta property="og:image" content="https://matosdavi.github.io/ricar/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="pt_BR">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="img/simbolo.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="img/icone-app.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Source+Sans+3:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="css/style.css?v=20261110i">
+<link rel="stylesheet" href="css/style.css?v=20261111a">
+<!-- Dados para o Google (oficina que atende numa região, sem endereço público). Ao trocar de domínio, troque as URLs. -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"AutoBodyShop","name":"Barão Pintura Automotiva",
+ "description":"Pintura automotiva com mais de 40 anos de experiência: para-choque, portas, para-lamas, capô, pintura completa e polimento.",
+ "url":"https://matosdavi.github.io/ricar/","image":"https://matosdavi.github.io/ricar/img/og.jpg","logo":"https://matosdavi.github.io/ricar/img/icone-app.png",
+ "telephone":"+55-11-96859-1162","priceRange":"$$","slogan":"Pintura padrão Barão",
+ "areaServed":[{"@type":"City","name":"Embu das Artes"},{"@type":"City","name":"Taboão da Serra"}],
+ "openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"09:00","closes":"18:00"}],
+ "sameAs":["https://www.instagram.com/baraopinturaofc/"]}
+</script>
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <span class="proto" id="proto">Protótipo · número do WhatsApp ainda não configurado</span>
     <div class="brand"><img src="img/simbolo.svg" alt="" width="44" height="44"><b>Barão</b><span>Pintura automotiva</span></div>
-    <h1>Peça seu orçamento <em>em 2 minutos</em></h1>
+    <h1>Seu carro com pintura <em>padrão Barão</em></h1>
+    <p class="sub">Pintura automotiva com mais de 40 anos de experiência. Peça seu orçamento em 2 minutos, sem compromisso.</p>
     <div class="facts">
       <span>Mais de 40 anos de experiência</span>
       <span id="f-regiao">Embu das Artes, Taboão da Serra e região</span>
       <span>Um carro por vez, com atenção total</span>
     </div>
+    <div class="cta">
+      <a class="btn primario" href="#pedido">Fazer meu orçamento</a>
+      <a class="btn wpp" id="wpp-direto" href="https://api.whatsapp.com/send?phone=5511968591162" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5.2A8.5 8.5 0 1 1 21 11.5z"/></svg>
+        Chamar no WhatsApp</a>
+    </div>
+    <p class="horario">Atendimento de segunda a sexta, das 9h às 18h. Os serviços são feitos no fim de semana, com hora marcada.</p>
   </header>
 
-  <ol class="how" aria-label="Como funciona">
-    <li><b>Preencha o pedido</b><span class="muted">Serviço, carro e quando você prefere.</span></li>
-    <li><b>Envie pelo WhatsApp</b><span class="muted">O pedido chega pronto para a nossa equipe.</span></li>
-    <li><b>Você manda 3 fotos</b><span class="muted">Na mesma conversa do WhatsApp, logo depois do pedido.</span></li>
-    <li><b>Receba o valor final</b><span class="muted">Depois de avaliar as fotos, confirmamos preço, prazo e data.</span></li>
+  <section class="servicos" aria-labelledby="t-servicos">
+    <h2 id="t-servicos">O que fazemos</h2>
+    <div class="cards">
+      <article class="card"><img src="img/servicos/parachoque.webp" alt="" width="640" height="400" loading="lazy"><div><h3>Para-choque</h3><p>Dianteiro ou traseiro: preparação, pintura e verniz na cor original.</p><button class="link" type="button" data-svc="parachoque">Pedir orçamento</button></div></article>
+      <article class="card"><img src="img/servicos/pecas.webp" alt="" width="640" height="400" loading="lazy"><div><h3>Porta, para-lama e capô</h3><p>Peça completa, com acerto da cor com o resto do carro.</p><button class="link" type="button" data-svc="porta">Pedir orçamento</button></div></article>
+      <article class="card"><img src="img/servicos/completa.webp" alt="" width="640" height="400" loading="lazy"><div><h3>Pintura completa</h3><p>O carro inteiro, com a cor uniforme de ponta a ponta.</p><button class="link" type="button" data-svc="completa">Pedir orçamento</button></div></article>
+      <article class="card"><img src="img/servicos/polimento.webp" alt="" width="640" height="400" loading="lazy"><div><h3>Polimento</h3><p>Tira manchas e riscos leves e devolve o brilho da pintura.</p><button class="link" type="button" data-svc="polimento">Pedir orçamento</button></div></article>
+      <article class="card"><img src="img/servicos/lojas.webp" alt="" width="640" height="400" loading="lazy"><div><h3>Lojas e frotas</h3><p>Condição especial para revendas, locadoras e frotas.</p><a class="link" id="wpp-lojas" href="https://api.whatsapp.com/send?phone=5511968591162" target="_blank" rel="noopener">Falar no WhatsApp</a></div></article>
+    </div>
+  </section>
+
+  <ol class="how" aria-label="Como funciona" id="como">
+    <li><b>Preencha o pedido</b><span class="muted">Serviço, carro e quando prefere.</span></li>
+    <li><b>Envie pelo WhatsApp</b><span class="muted">O pedido chega pronto para a gente.</span></li>
+    <li><b>Mande 3 fotos</b><span class="muted">Na mesma conversa, logo depois do pedido.</span></li>
+    <li><b>Receba o valor</b><span class="muted">Com as fotos, confirmamos preço, prazo e data.</span></li>
   </ol>
 
+  <div class="titulo-form" id="pedido" tabindex="-1"><h2>Peça seu orçamento</h2><p class="muted">Leva uns 2 minutos. O valor certo sai depois que a gente vê as fotos.</p></div>
   <div class="main">
     <form id="form" novalidate>
       <fieldset id="fs-svc" aria-describedby="e-svc" tabindex="-1">
@@ -91,8 +127,7 @@
             <svg viewBox="0 0 120 60" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M10 50 L10 22 Q10 14 20 14 L100 14 Q110 14 110 22 L110 50 Z"/><circle cx="60" cy="32" r="12" stroke="var(--cor)"/></g></svg>
             <b>Avaria de longe</b><small>A peça inteira, para ver o tamanho do estrago.</small></div>
         </div>
-        <label class="confirm" for="fotos-ok" id="l-fotos"><input type="checkbox" id="fotos-ok" aria-describedby="e-fotos"><span>Entendi: depois de enviar o pedido, eu mando as 3 fotos no WhatsApp.</span></label>
-        <p class="err" id="e-fotos" hidden>Marque aqui para confirmar que vai mandar as fotos.</p>
+        <p class="hint">Dica: fotos de dia, com o carro limpo, mostram melhor o estrago.</p>
       </fieldset>
       <div class="hp" aria-hidden="true"><label for="site">Site</label><input type="text" id="site" tabindex="-1" autocomplete="off"></div>
     </form>
@@ -114,10 +149,32 @@
     </aside>
   </div>
 
-  <section class="port" aria-label="Trabalhos">
-    <h2>Antes e depois</h2>
-    <p class="muted">Fotos dos nossos trabalhos em breve.</p>
-    <div class="slots"><div class="slot"><div>Antes</div><div>Depois</div></div><div class="slot"><div>Antes</div><div>Depois</div></div><div class="slot"><div>Antes</div><div>Depois</div></div></div>
+  <section class="sobre" aria-labelledby="t-sobre">
+    <figure class="sobre-foto" id="sobre-foto" hidden><img id="sobre-img" alt="Ricardo, o Barão, pintando um carro" loading="lazy"></figure>
+    <div class="sobre-texto">
+      <span class="kick">Quem é o Barão</span>
+      <h2 id="t-sobre">Mais de 40 anos de pintura automotiva</h2>
+      <p>Ricardo, o Barão, pinta carros há mais de 40 anos. A Barão é um negócio de família: ele cuida da pintura, e a família cuida do atendimento.</p>
+      <p>Trabalhamos em um carro por vez. Assim cada serviço recebe atenção total, do preparo ao verniz, e a cor fica igual ao resto do carro.</p>
+    </div>
+  </section>
+
+  <!-- Antes e depois: só aparece quando houver fotos em CONFIG.trabalhos (config.js) -->
+  <section class="port" id="trabalhos" aria-labelledby="t-trab" hidden>
+    <h2 id="t-trab">Antes e depois</h2>
+    <div class="slots" id="slots"></div>
+  </section>
+
+  <section class="faq" aria-labelledby="t-faq">
+    <h2 id="t-faq">Perguntas frequentes</h2>
+    <details><summary>Quanto custa?</summary><p>Depende da peça, do tamanho do carro e do tipo de tinta. Por isso pedimos as fotos: com elas mandamos o valor certo, sem compromisso.</p></details>
+    <details><summary>Por que preciso mandar fotos?</summary><p>Pelas fotos vemos o tamanho do estrago, a cor e se precisa de funilaria. Assim o orçamento sai certo, sem surpresa depois.</p></details>
+    <details><summary>Quanto tempo demora?</summary><p>A maioria dos serviços fica pronta em até 1 semana. Pintura completa pode levar mais; o prazo vem junto com o orçamento.</p></details>
+    <details><summary>Quando vocês atendem?</summary><p>Respondemos de segunda a sexta, das 9h às 18h. Os serviços são feitos no fim de semana, com hora marcada.</p></details>
+    <details><summary>Vocês fazem funilaria?</summary><p>Sim. Amassados passam primeiro pela funilaria, feita pelo nosso funileiro parceiro, e o valor dessa parte vem junto no orçamento.</p></details>
+    <details><summary>Como é o pagamento?</summary><p>Um sinal de 50% no Pix para comprarmos o material e o restante na entrega do carro.</p></details>
+    <details><summary>Onde deixo o carro?</summary><p>Depois que o orçamento é aprovado, combinamos pelo WhatsApp o local e o horário para deixar o carro.</p></details>
+    <details><summary>Quais cidades vocês atendem?</summary><p>Embu das Artes, Taboão da Serra e região. Se você mora mais longe, chame no WhatsApp que a gente vê.</p></details>
   </section>
 
   <footer>
@@ -125,11 +182,18 @@
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
       <span>Siga no Instagram: <b>@baraopinturaofc</b></span>
     </a>
-    <span>Barão Pintura Automotiva · Pintura padrão Barão · Embu das Artes, Taboão da Serra e região</span>
+    <div class="rodape-info">
+      <b>Barão Pintura Automotiva</b>
+      <span>WhatsApp: <a href="https://api.whatsapp.com/send?phone=5511968591162" id="wpp-rodape" target="_blank" rel="noopener">(11) 96859-1162</a></span>
+      <span>Atendimento de segunda a sexta, das 9h às 18h</span>
+      <span>Embu das Artes, Taboão da Serra e região</span>
+    </div>
+    <span class="priv">Seus dados só são usados para o seu orçamento.</span>
+    <span>Pintura padrão Barão</span>
   </footer>
 </div>
 
-<script src="js/config.js?v=20261110i"></script>
-<script src="js/app.js?v=20261110i"></script>
+<script src="js/config.js?v=20261111a"></script>
+<script src="js/app.js?v=20261111a"></script>
 </body>
 </html>
